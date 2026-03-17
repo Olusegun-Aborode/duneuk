@@ -28,26 +28,21 @@ export default function MarketOverview() {
     },
   });
 
-  // Live GBP/USD rate from Allium
+  // Live GBP/USD rate + token prices
   const { data: priceData } = useQuery<{
     data: Record<string, { price: number; chain: string }>;
+    gbpUsdRate: number | null;
   }>({
     queryKey: ["prices"],
     queryFn: async () => {
       const res = await fetch("/api/terminal/british-stablecoin/prices");
-      if (!res.ok) return { data: {} };
+      if (!res.ok) return { data: {}, gbpUsdRate: null };
       return res.json();
     },
   });
 
   const overview = data?.data?.[0];
-
-  // Get average GBP/USD rate from token prices (should be ~1.27-1.34)
-  const prices = priceData?.data ?? {};
-  const priceValues = Object.values(prices).map((p) => p.price).filter(Boolean);
-  const avgGbpUsd = priceValues.length > 0
-    ? priceValues.reduce((s, v) => s + v, 0) / priceValues.length
-    : null;
+  const gbpUsdRate = priceData?.gbpUsdRate ?? null;
 
   if (error) {
     return (
@@ -76,9 +71,9 @@ export default function MarketOverview() {
     },
     {
       label: "GBP/USD Rate",
-      value: avgGbpUsd ? `$${avgGbpUsd.toFixed(4)}` : "—",
+      value: gbpUsdRate ? `$${gbpUsdRate.toFixed(4)}` : "—",
       accent: false,
-      sub: avgGbpUsd ? "[Allium]" : undefined,
+      sub: gbpUsdRate ? "[ECB]" : undefined,
     },
     {
       label: "Tokens / Chains",

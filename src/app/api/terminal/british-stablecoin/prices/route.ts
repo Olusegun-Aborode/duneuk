@@ -16,17 +16,35 @@ interface AlliumToken {
   };
 }
 
+// Fetch live GBP/USD forex rate from ECB via frankfurter.app (free, no key)
+async function fetchGbpUsdRate(): Promise<number | null> {
+  try {
+    const res = await fetch("https://api.frankfurter.app/latest?from=GBP&to=USD", {
+      next: { revalidate: 3600 }, // cache for 1 hour
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.rates?.USD ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   try {
-    // Search for each GBP token across all chains
-    const searches = GBP_SYMBOLS.map((symbol) =>
-      getAlliumData(`/api/v1/developer/tokens/search?q=${symbol}&limit=10`)
-        .then((r) => r.data as unknown as AlliumToken[])
-        .catch(() => [] as AlliumToken[])
-    );
+    // Fetch token prices from Allium and GBP/USD forex rate in parallel
+    const [tokenResults, gbpUsdRate] = await Promise.all([
+      Promise.all(
+        GBP_SYMBOLS.map((symbol) =>
+          getAlliumData(`/api/v1/developer/tokens/search?q=${symbol}&limit=10`)
+            .then((r) => r.data as unknown as AlliumToken[])
+            .catch(() => [] as AlliumToken[])
+        )
+      ),
+      fetchGbpUsdRate(),
+    ]);
 
-    const results = await Promise.all(searches);
-    const allTokens = results.flat();
+    const allTokens = tokenResults.flat();
 
     // Filter and deduplicate — keep highest-priced entry per symbol (most liquid)
     const priceMap: Record<string, { price: number; chain: string }> = {};
@@ -40,6 +58,7 @@ export async function GET() {
 
     return NextResponse.json({
       data: priceMap,
+      gbpUsdRate,
       lastUpdated: new Date().toISOString(),
       source: "allium",
     });
