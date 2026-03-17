@@ -42,9 +42,22 @@ export default function MarketOverview() {
   });
 
   const overview = data?.data?.[0];
-  const FALLBACK_GBP_USD = 1.27;
-  const gbpUsdRate = priceData?.gbpUsdRate ?? FALLBACK_GBP_USD;
-  const isLiveRate = !!priceData?.gbpUsdRate;
+
+  // Persist last live rate to localStorage so we never show a stale hardcoded value
+  const GBP_USD_STORAGE_KEY = "duneuk_gbp_usd_rate";
+  const liveRate = priceData?.gbpUsdRate ?? null;
+
+  if (liveRate !== null && typeof window !== "undefined") {
+    localStorage.setItem(GBP_USD_STORAGE_KEY, String(liveRate));
+  }
+
+  const cachedRate =
+    typeof window !== "undefined"
+      ? parseFloat(localStorage.getItem(GBP_USD_STORAGE_KEY) ?? "")
+      : NaN;
+
+  const gbpUsdRate = liveRate ?? (isNaN(cachedRate) ? null : cachedRate);
+  const isLiveRate = liveRate !== null;
 
   if (error) {
     return (
@@ -73,9 +86,9 @@ export default function MarketOverview() {
     },
     {
       label: "GBP/USD Rate",
-      value: `$${gbpUsdRate.toFixed(4)}`,
+      value: gbpUsdRate !== null ? `$${gbpUsdRate.toFixed(4)}` : "—",
       accent: false,
-      sub: isLiveRate ? "[ECB]" : "[cached]",
+      sub: gbpUsdRate !== null ? (isLiveRate ? "[ECB]" : "[cached]") : undefined,
     },
     {
       label: "Tokens / Chains",

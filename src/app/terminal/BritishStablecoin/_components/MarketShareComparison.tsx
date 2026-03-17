@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatCompactUSD } from "@/lib/format";
 import { CHART_COLORS } from "@/lib/constants";
 import type { MarketShareEntry, DuneApiResponse } from "@/lib/types";
@@ -92,10 +92,44 @@ export default function MarketShareComparison() {
     );
   }
 
+  const [showTooltip, setShowTooltip] = useState(false);
+
   return (
     <div className="tui-panel">
       <div className="tui-panel-header">
-        <span className="tui-panel-title">Stablecoin Market Share</span>
+        <div className="flex items-center gap-2">
+          <span className="tui-panel-title">Stablecoin Market Share</span>
+          <div className="relative inline-block">
+            <button
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              onClick={() => setShowTooltip((v) => !v)}
+              className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold cursor-pointer"
+              style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
+              aria-label="Market share info"
+            >
+              i
+            </button>
+            {showTooltip && (
+              <div
+                className="absolute z-50 w-72 p-3 rounded text-[11px] leading-relaxed"
+                style={{
+                  top: "calc(100% + 6px)",
+                  right: 0,
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-muted)",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                }}
+              >
+                <span style={{ color: "var(--accent-green)" }} className="font-bold">GBP stablecoins</span> represent{" "}
+                <span style={{ color: "var(--foreground)" }} className="font-bold">&lt;0.01%</span> of the combined
+                GBP+USD+EUR stablecoin supply on EVM + Solana chains. This represents a significant market gap and
+                growth opportunity for GBP-denominated on-chain assets.
+              </div>
+            )}
+          </div>
+        </div>
         <span className="tui-panel-badge">GBP vs USD vs EUR</span>
       </div>
 
@@ -117,20 +151,6 @@ export default function MarketShareComparison() {
                   <div className="counter-label">{group} Total Supply</div>
                 </div>
               ))}
-            </div>
-
-            {/* GBP share narrative */}
-            <div className="bg-[#0D0F13] border border-[#1a1d24] rounded px-4 py-3 mb-4">
-              <p className="text-xs text-[#9CA3AF]">
-                <span className="text-[#00FF88] font-bold">GBP stablecoins</span> represent{" "}
-                <span className="text-white font-bold">{gbpShare < 0.01 ? "<0.01" : gbpShare.toFixed(4)}%</span>{" "}
-                of the combined GBP+USD+EUR stablecoin supply on EVM + Solana chains.
-                {gbpShare < 0.1 && (
-                  <span className="text-[#6B7280]">
-                    {" "}This represents a significant market gap and growth opportunity for GBP-denominated on-chain assets.
-                  </span>
-                )}
-              </p>
             </div>
 
             {/* Token breakdown table */}
