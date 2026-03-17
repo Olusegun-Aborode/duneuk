@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/terminal/:path*",
+      "destination": "https://duneuk-terminal.vercel.app/terminal/:path*"
+    },
+    {
+      "source": "/api/terminal/:path*",
+      "destination": "https://duneuk-terminal.vercel.app/api/terminal/:path*"
+    },
+    {
+      "source": "/api/subscribe",
+      "destination": "https://duneuk-terminal.vercel.app/api/subscribe"
+    }
+  ]
+}
