@@ -25,7 +25,7 @@ export default function DuneUKPage() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[40px_1fr_40px] grid-rows-[60px_1fr_40px] min-h-screen w-full">
+    <div className="grid grid-cols-1 md:grid-cols-[40px_1fr_40px] grid-rows-[60px_1fr_40px] min-h-screen w-full overflow-x-hidden">
       {/* Left Flank - Hidden on mobile */}
       <div className="hidden md:flex flex-col justify-center items-center font-mono text-[10px] text-white/30 [writing-mode:vertical-rl] rotate-180 border-r border-border row-span-3">
         SYS.SEQ // 001-A
@@ -34,7 +34,7 @@ export default function DuneUKPage() {
       <Header activeView={activeView} onViewChange={handleViewChange} />
 
       {/* Main Content */}
-      <main className="col-start-1 md:col-start-2 row-start-2 p-4 md:p-6 lg:p-10 relative flex flex-col overflow-auto">
+      <main className="col-start-1 md:col-start-2 row-start-2 p-4 md:p-6 lg:p-10 relative flex flex-col overflow-x-hidden overflow-y-auto">
         <DataCanvas />
         
         <div
