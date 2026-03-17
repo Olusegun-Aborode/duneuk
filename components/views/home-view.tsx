@@ -6,7 +6,7 @@ interface HomeViewProps {
 
 export function HomeView({ onNavigate }: HomeViewProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 lg:gap-20 flex-grow items-center py-4 md:py-0">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 lg:gap-20 flex-grow items-center py-4 md:py-0 overflow-hidden">
       {/* Hero Text */}
       <div className="flex flex-col">
         <span className="font-mono text-[10px] uppercase tracking-wide text-text-dim mb-3 md:mb-4">
@@ -44,7 +44,7 @@ export function HomeView({ onNavigate }: HomeViewProps) {
       </div>
 
       {/* Routing Panels */}
-      <div className="flex flex-col gap-3 md:gap-4">
+      <div className="flex flex-col gap-3 md:gap-4 min-w-0">
         <RouteCard
           title="Curated Dashboards"
           description="External links to Dune Analytics queries concerning UK DeFi, NFTs, and L2 activity."
@@ -73,17 +73,17 @@ function RouteCard({ title, description, action, onClick }: RouteCardProps) {
   return (
     <button
       onClick={onClick}
-      className="group relative bg-surface/60 backdrop-blur-sm border border-border p-4 md:p-6 flex flex-col md:grid md:grid-cols-[1fr_auto] gap-2 md:gap-4 md:items-center text-left transition-all duration-200 hover:bg-surface-hover/80 hover:border-border-light overflow-hidden cursor-pointer"
+      className="group relative bg-surface/60 backdrop-blur-sm border border-border p-4 md:p-6 flex flex-col gap-2 text-left transition-all duration-200 hover:bg-surface-hover/80 hover:border-border-light overflow-hidden cursor-pointer min-w-0"
     >
       {/* Left accent bar */}
       <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-transparent transition-colors duration-200 group-hover:bg-accent-orange" />
       
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 min-w-0">
         <span className="text-base md:text-lg font-medium tracking-tight text-white">{title}</span>
-        <span className="font-mono text-[10px] md:text-[11px] text-white/70">{description}</span>
+        <span className="font-mono text-[10px] md:text-[11px] text-white/70 break-words">{description}</span>
       </div>
       
-      <span className="font-mono text-[10px] md:text-[11px] text-white/60 transition-colors duration-200 group-hover:text-white">
+      <span className="font-mono text-[10px] md:text-[11px] text-white/60 transition-colors duration-200 group-hover:text-white shrink-0">
         {action}
         <span className="hidden group-hover:inline" style={{ animation: "blink 1s step-end infinite" }}> _</span>
       </span>

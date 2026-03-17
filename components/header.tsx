@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -23,17 +24,13 @@ export function Header({ activeView, onViewChange }: HeaderProps) {
     <header className="col-start-1 md:col-start-2 row-start-1 flex justify-between items-center border-b border-border px-3 md:px-4">
       <nav className="flex items-center gap-2 md:gap-3 font-mono text-[10px] md:text-[11px] text-white/60">
         {/* Logo */}
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 100 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+        <Image
+          src="/logo.png"
+          alt="DuneUK Logo"
+          width={20}
+          height={20}
           className="block shrink-0"
-        >
-          <circle cx="50" cy="50" r="50" fill="#000000" />
-          <path d="M 15 80 L 85 40" stroke="#FFFFFF" strokeWidth="8" />
-        </svg>
+        />
         
         <span className="text-white/30 hidden sm:inline">/</span>
         
