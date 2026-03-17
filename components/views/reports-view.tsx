@@ -29,7 +29,7 @@ const reports = [
 export function ReportsView() {
   return (
     <div className="flex-1 flex flex-col justify-center py-8">
-      <div className="flex flex-col gap-12">
+      <div className="flex flex-col gap-8 sm:gap-10 md:gap-12">
         {reports.map((report) => (
           <ReportItem key={report.id} report={report} />
         ))}
@@ -84,14 +84,14 @@ function ReportItem({ report }: { report: Report }) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 md:gap-10 pb-8 md:pb-10 border-b border-border last:border-b-0 last:pb-0 items-start">
+    <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] lg:grid-cols-[2fr_1fr] gap-4 sm:gap-6 md:gap-8 lg:gap-10 pb-6 sm:pb-8 md:pb-10 border-b border-border last:border-b-0 last:pb-0 items-start">
       {/* Report Info */}
       <div className="flex flex-col gap-4 md:gap-5">
         <Link href={report.href} className="block group">
           <span className="font-mono text-[9px] md:text-[10px] uppercase tracking-wide text-white/60 block mb-2">
             <span className="text-accent-orange">■</span> {report.id}
           </span>
-          <h2 className="text-2xl md:text-3xl font-medium tracking-tight text-white group-hover:text-accent-orange transition-colors">
+          <h2 className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-medium tracking-tight text-white group-hover:text-accent-orange transition-colors">
             {report.title}
           </h2>
         </Link>

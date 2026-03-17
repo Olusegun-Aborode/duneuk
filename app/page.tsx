@@ -34,7 +34,7 @@ export default function DuneUKPage() {
       <Header activeView={activeView} onViewChange={handleViewChange} />
 
       {/* Main Content */}
-      <main className="col-start-1 md:col-start-2 row-start-2 p-4 md:p-6 lg:p-10 relative flex flex-col overflow-x-hidden overflow-y-auto">
+      <main className="col-start-1 md:col-start-2 row-start-2 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 relative flex flex-col overflow-x-hidden overflow-y-auto">
         <DataCanvas />
         
         <div
