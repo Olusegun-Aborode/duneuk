@@ -46,7 +46,7 @@ export default function Methodology() {
       <div className="p-4 lg:p-5 space-y-4">
         {SECTIONS.map((section) => (
           <div key={section.title}>
-            <h4 className="text-[11px] text-[#00FF88] font-bold uppercase tracking-wider mb-1.5">
+            <h4 className="text-[11px] text-[#FF6B35] font-bold uppercase tracking-wider mb-1.5">
               {section.title}
             </h4>
             <p className="text-xs text-[#9CA3AF] leading-relaxed">

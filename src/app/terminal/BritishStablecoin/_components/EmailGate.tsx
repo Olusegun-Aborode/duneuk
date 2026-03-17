@@ -81,7 +81,7 @@ export default function EmailGate({
             {/* Terminal prompt style message */}
             <div className="text-[11px] text-[#6B7280] space-y-1">
               <p>
-                <span className="text-[#00FF88]">&gt;</span> Full terminal
+                <span className="text-[#FF6B35]">&gt;</span> Full terminal
                 access includes:
               </p>
               <p className="pl-4">
@@ -100,15 +100,15 @@ export default function EmailGate({
                 - Top holder rankings
               </p>
               <p className="mt-2">
-                <span className="text-[#00FF88]">&gt;</span> Enter email to
+                <span className="text-[#FF6B35]">&gt;</span> Enter email to
                 unlock
                 <span className="cursor-blink" />
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="flex items-center gap-2 bg-[#0B0D0F] border border-white/[0.08] rounded px-3 py-2.5 focus-within:border-[#00FF88]/40 transition-colors">
-                <span className="text-[#00FF88] text-xs">&gt;</span>
+              <div className="flex items-center gap-2 bg-[#0B0D0F] border border-white/[0.08] rounded px-3 py-2.5 focus-within:border-[#FF6B35]/40 transition-colors">
+                <span className="text-[#FF6B35] text-xs">&gt;</span>
                 <input
                   type="email"
                   placeholder="you@email.com"
@@ -121,7 +121,7 @@ export default function EmailGate({
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-[#00FF88] text-[#0B0D0F] font-bold rounded py-2.5 text-xs uppercase tracking-wider hover:bg-[#00FF88]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#FF6B35] text-[#0B0D0F] font-bold rounded py-2.5 text-xs uppercase tracking-wider hover:bg-[#FF6B35]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "Authenticating..." : "Unlock Terminal"}
               </button>

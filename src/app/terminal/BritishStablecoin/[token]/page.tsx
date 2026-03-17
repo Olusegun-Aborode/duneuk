@@ -314,7 +314,7 @@ export default function TokenDetailPage() {
               {meta.cex.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {meta.cex.map((ex) => (
-                    <span key={ex} className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: "#00FF88", border: "1px solid #00FF88", background: "rgba(0,255,136,0.08)" }}>
+                    <span key={ex} className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ color: "#FF6B35", border: "1px solid #FF6B35", background: "rgba(255,107,53,0.08)" }}>
                       {ex}
                     </span>
                   ))}

@@ -43,7 +43,7 @@ export function TuiStatusDot({
   status?: "live" | "stale" | "error";
 }) {
   const colors = {
-    live: "bg-[#00FF88]",
+    live: "bg-[#FF6B35]",
     stale: "bg-[#FFD700]",
     error: "bg-[#FF4444]",
   };

@@ -7,24 +7,24 @@ export default function Home() {
         {/* Terminal boot sequence */}
         <div className="text-left text-[11px] text-[#6B7280] space-y-1 mb-8">
           <p>
-            <span className="text-[#00FF88]">[OK]</span> Dune Analytics
+            <span className="text-[#FF6B35]">[OK]</span> Dune Analytics
             connection established
           </p>
           <p>
-            <span className="text-[#00FF88]">[OK]</span> Loading on-chain data
+            <span className="text-[#FF6B35]">[OK]</span> Loading on-chain data
             modules...
           </p>
           <p>
-            <span className="text-[#00FF88]">[OK]</span> 7 queries cached
+            <span className="text-[#FF6B35]">[OK]</span> 7 queries cached
           </p>
           <p>
-            <span className="text-[#00FF88]">[OK]</span> Terminal ready
+            <span className="text-[#FF6B35]">[OK]</span> Terminal ready
           </p>
         </div>
 
         {/* Logo */}
         <h1 className="text-3xl font-bold tracking-tight">
-          DUNE<span className="text-[#00FF88]">UK</span>
+          DUNE<span className="text-[#FF6B35]">UK</span>
         </h1>
         <p className="text-[#6B7280] text-sm">
           On-chain data terminals for the UK crypto ecosystem
@@ -42,9 +42,9 @@ export default function Home() {
               className="flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors rounded group"
             >
               <div className="flex items-center gap-3">
-                <span className="text-[#00FF88] text-xs">&gt;</span>
+                <span className="text-[#FF6B35] text-xs">&gt;</span>
                 <div>
-                  <span className="text-sm font-bold text-white group-hover:text-[#00FF88] transition-colors">
+                  <span className="text-sm font-bold text-white group-hover:text-[#FF6B35] transition-colors">
                     British Stablecoin Terminal
                   </span>
                   <p className="text-[10px] text-[#6B7280] mt-0.5">
@@ -53,7 +53,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00FF88] animate-pulse" />
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#FF6B35] animate-pulse" />
                 <span className="text-[10px] text-[#6B7280]">LIVE</span>
               </div>
             </Link>

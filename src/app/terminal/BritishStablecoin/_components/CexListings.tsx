@@ -21,7 +21,7 @@ const CEX_DATA: CexListing[] = [
 ];
 
 const STATUS_STYLE: Record<string, { color: string; label: string }> = {
-  active: { color: "#00FF88", label: "ACTIVE" },
+  active: { color: "#FF6B35", label: "ACTIVE" },
   limited: { color: "#F0B90B", label: "LIMITED" },
   historical: { color: "#6B7280", label: "HIST" },
   none: { color: "#FF4444", label: "NONE" },

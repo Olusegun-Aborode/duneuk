@@ -117,7 +117,7 @@ export default function LendingUtilization() {
                   <div className="flex items-center justify-end gap-1.5">
                     <div className="w-10 h-1.5 bg-[#1a1d24] rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-[#00FF88]"
+                        className="h-full rounded-full bg-[#FF6B35]"
                         style={{ width: `${Math.min(utilPct, 100)}%` }}
                       />
                     </div>
