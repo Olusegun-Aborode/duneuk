@@ -42,7 +42,9 @@ export default function MarketOverview() {
   });
 
   const overview = data?.data?.[0];
-  const gbpUsdRate = priceData?.gbpUsdRate ?? null;
+  const FALLBACK_GBP_USD = 1.27;
+  const gbpUsdRate = priceData?.gbpUsdRate ?? FALLBACK_GBP_USD;
+  const isLiveRate = !!priceData?.gbpUsdRate;
 
   if (error) {
     return (
@@ -71,9 +73,9 @@ export default function MarketOverview() {
     },
     {
       label: "GBP/USD Rate",
-      value: gbpUsdRate ? `$${gbpUsdRate.toFixed(4)}` : "—",
+      value: `$${gbpUsdRate.toFixed(4)}`,
       accent: false,
-      sub: gbpUsdRate ? "[ECB]" : undefined,
+      sub: isLiveRate ? "[ECB]" : "[cached]",
     },
     {
       label: "Tokens / Chains",
