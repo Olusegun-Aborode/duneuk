@@ -18,7 +18,6 @@ import CexListings from "./_components/CexListings";
 import Methodology from "./_components/Methodology";
 import NewsletterArchive from "./_components/NewsletterArchive";
 import ScreenshotButton from "./_components/ScreenshotButton";
-import Link from "next/link";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -139,12 +138,12 @@ export default function BritishStablecoinPage() {
       {/* Header bar */}
       <div className="flex items-end justify-between flex-wrap gap-2">
         <div>
-          <Link
+          <a
             href="https://www.duneuk.com/"
             className="inline-flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors mb-1"
           >
             <span>&larr;</span> Back to DuneUK
-          </Link>
+          </a>
           <div className="flex items-center gap-2">
             <span className="text-[var(--accent-green)] text-xs font-bold">&pound;</span>
             <h1 className="text-lg font-bold text-[var(--foreground)] tracking-tight">
