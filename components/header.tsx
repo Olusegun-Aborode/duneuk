@@ -21,8 +21,8 @@ export function Header({ activeView, onViewChange }: HeaderProps) {
   ]
 
   return (
-    <header className="col-start-1 md:col-start-2 row-start-1 flex justify-between items-center border-b border-border px-3 md:px-4">
-      <nav className="flex items-center gap-2 md:gap-3 font-mono text-[10px] md:text-[11px] text-white/60">
+    <header className="col-start-1 md:col-start-2 row-start-1 flex justify-between items-center border-b border-border px-2 sm:px-3 md:px-4">
+      <nav className="flex items-center gap-1.5 sm:gap-2 md:gap-3 font-mono text-[9px] sm:text-[10px] md:text-[11px] text-white/60">
         {/* Logo */}
         <Image
           src="/logo.png"
@@ -35,12 +35,12 @@ export function Header({ activeView, onViewChange }: HeaderProps) {
         <span className="text-white/30 hidden sm:inline">/</span>
         
         {navItems.map((item, index) => (
-          <div key={item.id} className="flex items-center gap-2 md:gap-3">
+          <div key={item.id} className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
             <button
               onClick={() => onViewChange(item.id)}
               className={cn(
                 "relative transition-colors duration-200 hover:text-white cursor-pointer whitespace-nowrap",
-                activeView === item.id && !isTerminalActive ? "text-white pl-2 md:pl-3" : "pl-0"
+                activeView === item.id && !isTerminalActive ? "text-white pl-2 sm:pl-2 md:pl-3" : "pl-0"
               )}
             >
               {activeView === item.id && !isTerminalActive && (
@@ -58,7 +58,7 @@ export function Header({ activeView, onViewChange }: HeaderProps) {
           href="/terminal/BritishStablecoin"
           className={cn(
             "relative transition-colors duration-200 hover:text-white whitespace-nowrap",
-            isTerminalActive ? "text-white pl-2 md:pl-3" : "pl-0"
+            isTerminalActive ? "text-white pl-2 sm:pl-2 md:pl-3" : "pl-0"
           )}
         >
           {isTerminalActive && (
@@ -69,8 +69,9 @@ export function Header({ activeView, onViewChange }: HeaderProps) {
         </Link>
       </nav>
 
-      <div className="flex items-center gap-2 font-mono text-[9px] md:text-[10px] uppercase shrink-0">
-        <span className="text-white/60 hidden sm:inline">UK_NODE_CONNECTED</span>
+      <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[8px] sm:text-[9px] md:text-[10px] uppercase shrink-0">
+        <span className="text-white/60 hidden md:inline">UK_NODE_CONNECTED</span>
+        <span className="text-white/60 hidden sm:inline md:hidden">UK_NODE</span>
         <span className="text-white/60 sm:hidden">UK</span>
         <div 
           className="w-1.5 h-1.5 bg-accent-orange"

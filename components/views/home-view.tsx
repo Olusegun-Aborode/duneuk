@@ -6,20 +6,20 @@ interface HomeViewProps {
 
 export function HomeView({ onNavigate }: HomeViewProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10 lg:gap-20 flex-grow items-center py-4 md:py-0 overflow-hidden">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-16 xl:gap-20 flex-grow items-center py-4 md:py-0 overflow-hidden">
       {/* Hero Text */}
       <div className="flex flex-col">
         <span className="font-mono text-[10px] uppercase tracking-wide text-text-dim mb-3 md:mb-4">
           <span className="text-accent-orange">■</span> ONCHAIN_DATA
         </span>
         
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-light tracking-tight leading-[1.1] mb-4 md:mb-6 text-balance text-white">
+        <h1 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl xl:text-5xl font-light tracking-tight leading-[1.1] mb-4 md:mb-5 lg:mb-6 text-balance text-white">
           Decoding the<br />
           UK On-Chain<br />
           Ecosystem.
         </h1>
         
-        <p className="font-mono text-white/80 text-[12px] md:text-[13px] max-w-full md:max-w-[80%] mb-6 md:mb-10 leading-relaxed">
+        <p className="font-mono text-white/80 text-[11px] sm:text-[12px] md:text-[12px] lg:text-[13px] max-w-full md:max-w-[90%] lg:max-w-[80%] mb-5 sm:mb-6 md:mb-8 lg:mb-10 leading-relaxed">
           DuneUK is the analytical staging ground for researchers, builders, and data scientists.{" "}
           <span className="text-white">We surface signal from noise</span> across the rapidly evolving Web3 landscape within the United Kingdom. Access curated telemetry or request localized research reports below.
         </p>
@@ -44,7 +44,7 @@ export function HomeView({ onNavigate }: HomeViewProps) {
       </div>
 
       {/* Routing Panels */}
-      <div className="flex flex-col gap-3 md:gap-4 min-w-0">
+      <div className="flex flex-col gap-3 sm:gap-4 min-w-0">
         <RouteCard
           title="Curated Dashboards"
           description="External links to Dune Analytics queries concerning UK DeFi, NFTs, and L2 activity."
@@ -73,17 +73,17 @@ function RouteCard({ title, description, action, onClick }: RouteCardProps) {
   return (
     <button
       onClick={onClick}
-      className="group relative bg-surface/60 backdrop-blur-sm border border-border p-4 md:p-6 flex flex-col gap-2 text-left transition-all duration-200 hover:bg-surface-hover/80 hover:border-border-light overflow-hidden cursor-pointer min-w-0"
+      className="group relative bg-surface/60 backdrop-blur-sm border border-border p-3 sm:p-4 md:p-5 lg:p-6 flex flex-col gap-2 text-left transition-all duration-200 hover:bg-surface-hover/80 hover:border-border-light overflow-hidden cursor-pointer min-w-0"
     >
       {/* Left accent bar */}
       <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-transparent transition-colors duration-200 group-hover:bg-accent-orange" />
       
       <div className="flex flex-col gap-1 min-w-0">
-        <span className="text-base md:text-lg font-medium tracking-tight text-white">{title}</span>
-        <span className="font-mono text-[10px] md:text-[11px] text-white/70 break-words">{description}</span>
+        <span className="text-sm sm:text-base md:text-base lg:text-lg font-medium tracking-tight text-white">{title}</span>
+        <span className="font-mono text-[9px] sm:text-[10px] md:text-[10px] lg:text-[11px] text-white/70 break-words">{description}</span>
       </div>
       
-      <span className="font-mono text-[10px] md:text-[11px] text-white/60 transition-colors duration-200 group-hover:text-white shrink-0">
+      <span className="font-mono text-[9px] sm:text-[10px] md:text-[10px] lg:text-[11px] text-white/60 transition-colors duration-200 group-hover:text-white shrink-0">
         {action}
         <span className="hidden group-hover:inline" style={{ animation: "blink 1s step-end infinite" }}> _</span>
       </span>
