@@ -17,21 +17,8 @@ export const metadata: Metadata = {
   description: 'DuneUK is the analytical staging ground for researchers, builders, and data scientists. We surface signal from noise across the rapidly evolving Web3 landscape within the United Kingdom.',
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/favicon.png',
+    apple: '/favicon.png',
   },
 }
 
