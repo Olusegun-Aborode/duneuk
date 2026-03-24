@@ -94,6 +94,18 @@ export default function MarketShareComparison() {
 
   const [showTooltip, setShowTooltip] = useState(false);
 
+  // Group token symbols by currency for the tooltip
+  const tokensByGroup = useMemo(() => {
+    const groups: Record<string, string[]> = { GBP: [], USD: [], EUR: [] };
+    for (const row of rows) {
+      const g = row.currency_group;
+      if (groups[g] && !groups[g].includes(row.symbol)) {
+        groups[g].push(row.symbol);
+      }
+    }
+    return groups;
+  }, [rows]);
+
   return (
     <div className="tui-panel">
       <div className="tui-panel-header">
@@ -126,6 +138,17 @@ export default function MarketShareComparison() {
                 <span style={{ color: "var(--foreground)" }} className="font-bold">&lt;0.01%</span> of the combined
                 GBP+USD+EUR stablecoin supply on EVM + Solana chains. This represents a significant market gap and
                 growth opportunity for GBP-denominated on-chain assets.
+                <div className="mt-2 pt-2" style={{ borderTop: "1px solid var(--border)" }}>
+                  <div className="font-bold mb-1" style={{ color: "var(--foreground)" }}>Tokens covered:</div>
+                  {(["GBP", "USD", "EUR"] as const).map((g) => (
+                    tokensByGroup[g]?.length > 0 && (
+                      <div key={g} className="mb-0.5">
+                        <span style={{ color: GROUP_COLORS[g] }} className="font-bold">{g}:</span>{" "}
+                        {tokensByGroup[g].join(", ")}
+                      </div>
+                    )
+                  ))}
+                </div>
               </div>
             )}
           </div>

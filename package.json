@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@datumlabs/data-connectors": "file:../DatumLabs/datumlabs-sdk/packages/data-connectors",
     "@tanstack/react-query": "^5.90.21",
     "clsx": "^2.1.1",
     "html-to-image": "^1.11.13",

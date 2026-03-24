@@ -34,7 +34,7 @@ function formatDateAxis(dateStr: string) {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
   ];
-  return `${months[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
 export default function SupplyChart() {
@@ -55,9 +55,14 @@ export default function SupplyChart() {
   const chartData = useMemo(() => {
     if (!data?.data) return [];
     const cutoff = getCutoffDate(range);
-    const filtered = cutoff
-      ? data.data.filter((r) => new Date(r.day) >= cutoff)
-      : data.data;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const filtered = data.data.filter((r) => {
+      const d = new Date(r.day);
+      if (d > today) return false;
+      if (cutoff && d < cutoff) return false;
+      return true;
+    });
     return pivotData(filtered);
   }, [data, range]);
 
@@ -70,7 +75,8 @@ export default function SupplyChart() {
     if (!chartData.length) return "";
     const first = chartData[0].day.slice(0, 10);
     const last = chartData[chartData.length - 1].day.slice(0, 10);
-    return `${first} → ${last}`;
+    const today = new Date().toISOString().slice(0, 10);
+    return `${first} → ${last > today ? today : last}`;
   }, [chartData]);
 
   if (error) {

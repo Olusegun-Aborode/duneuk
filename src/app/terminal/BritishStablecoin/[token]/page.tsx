@@ -34,13 +34,13 @@ const CHAIN_COLORS: Record<string, string> = {
 function formatDateAxis(dateStr: string) {
   const d = new Date(dateStr);
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  return `${months[d.getMonth()]} ${d.getDate()}`;
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
 function formatWeekAxis(dateStr: string) {
   const d = new Date(dateStr);
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  return `${months[d.getMonth()]} ${d.getDate()}`;
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
 export default function TokenDetailPage() {

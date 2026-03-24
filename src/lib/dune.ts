@@ -1,45 +1,13 @@
-import { CACHE_TTL_MS } from "./constants";
+import { DuneConnector } from "@datumlabs/data-connectors";
 
-interface CacheEntry {
-  data: Record<string, unknown>[];
-  timestamp: number;
-}
-
-const cache = new Map<number, CacheEntry>();
+const dune = new DuneConnector({
+  defaultLimit: 5000,
+});
 
 export async function getDuneQueryResults(queryId: number) {
-  const cached = cache.get(queryId);
-  const now = Date.now();
-
-  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-    return {
-      data: cached.data,
-      lastUpdated: new Date(cached.timestamp).toISOString(),
-    };
-  }
-
-  const apiKey = process.env.DUNE_API_KEY;
-  if (!apiKey) throw new Error("DUNE_API_KEY not configured");
-
-  const res = await fetch(
-    `https://api.dune.com/api/v1/query/${queryId}/results?limit=1000`,
-    {
-      headers: { "X-Dune-Api-Key": apiKey },
-      next: { revalidate: 0 },
-    }
-  );
-
-  if (!res.ok) {
-    throw new Error(`Dune API error: ${res.status} ${res.statusText}`);
-  }
-
-  const json = await res.json();
-  const rows = json.result?.rows ?? [];
-
-  cache.set(queryId, { data: rows, timestamp: now });
-
+  const result = await dune.getQueryResults(queryId, 5000);
   return {
-    data: rows,
-    lastUpdated: new Date(now).toISOString(),
+    data: result.data,
+    lastUpdated: result.lastUpdated,
   };
 }

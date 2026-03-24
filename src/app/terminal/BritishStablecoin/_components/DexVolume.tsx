@@ -23,7 +23,7 @@ function formatWeekAxis(dateStr: string) {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
   ];
-  return `${months[d.getMonth()]} ${d.getDate()}`;
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
 function pivotByWeek(rows: DexVolumeEntry[]) {
@@ -56,9 +56,14 @@ export default function DexVolume() {
   const chartData = useMemo(() => {
     if (!data?.data) return [];
     const cutoff = getCutoffDate(range);
-    const filtered = cutoff
-      ? data.data.filter((r) => new Date(r.week) >= cutoff)
-      : data.data;
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    const filtered = data.data.filter((r) => {
+      const d = new Date(r.week);
+      if (d > today) return false;
+      if (cutoff && d < cutoff) return false;
+      return true;
+    });
     return pivotByWeek(filtered);
   }, [data, range]);
 
@@ -71,7 +76,8 @@ export default function DexVolume() {
     if (!chartData.length) return "";
     const first = chartData[0].week.slice(0, 10);
     const last = chartData[chartData.length - 1].week.slice(0, 10);
-    return `${first} → ${last}`;
+    const today = new Date().toISOString().slice(0, 10);
+    return `${first} → ${last > today ? today : last}`;
   }, [chartData]);
 
   if (error) {
