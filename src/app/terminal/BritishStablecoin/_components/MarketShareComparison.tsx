@@ -78,20 +78,6 @@ export default function MarketShareComparison() {
     return { rows: allRows, grouped: totals, gbpShare: share };
   }, [data, solanaData]);
 
-  if (error) {
-    return (
-      <div className="tui-panel">
-        <div className="tui-panel-header">
-          <span className="tui-panel-title">Stablecoin Market Share</span>
-          <span className="text-[10px] text-[#FF4444]">ERR</span>
-        </div>
-        <div className="p-4 text-[#FF4444] text-xs">
-          Failed to load market share data.
-        </div>
-      </div>
-    );
-  }
-
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Group token symbols by currency for the tooltip
@@ -105,6 +91,20 @@ export default function MarketShareComparison() {
     }
     return groups;
   }, [rows]);
+
+  if (error) {
+    return (
+      <div className="tui-panel">
+        <div className="tui-panel-header">
+          <span className="tui-panel-title">Stablecoin Market Share</span>
+          <span className="text-[10px] text-[#FF4444]">ERR</span>
+        </div>
+        <div className="p-4 text-[#FF4444] text-xs">
+          Failed to load market share data.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="tui-panel">
