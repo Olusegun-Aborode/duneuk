@@ -1,4 +1,4 @@
-import { DuneConnector } from "@datumlabs/data-connectors";
+import { DuneConnector } from "./connectors/dune";
 
 /**
  * Dune connector with automatic pagination and freshness control.

@@ -1,4 +1,4 @@
-import { AlliumConnector } from "@datumlabs/data-connectors";
+import { AlliumConnector } from "./connectors/allium";
 
 const allium = new AlliumConnector();
 
