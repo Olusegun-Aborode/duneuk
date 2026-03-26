@@ -3,8 +3,33 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { formatNative, formatPercent } from "@/lib/format";
+import { formatNative, formatPercent, formatCompactUSD } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
+
+const RADIAN = Math.PI / 180;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function renderChainLabel(props: any) {
+  const { cx, cy, midAngle, innerRadius, outerRadius, name, percent } = props;
+  if (percent < 0.03) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 1.35;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+
+  return (
+    <text
+      x={x} y={y}
+      fill="var(--text-muted)"
+      textAnchor={x > cx ? "start" : "end"}
+      dominantBaseline="central"
+      fontSize={10}
+      fontFamily="monospace"
+    >
+      {displayName} {(percent * 100).toFixed(0)}%
+    </text>
+  );
+}
 import type { ChainDistributionEntry, DuneApiResponse } from "@/lib/types";
 import { ChainLogo } from "@/components/ChainLogo";
 import ChartWatermark from "./ChartWatermark";
@@ -136,7 +161,7 @@ export default function ChainDistribution() {
         ) : (
           <div className="flex flex-col items-center relative">
             <ChartWatermark />
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -144,10 +169,12 @@ export default function ChainDistribution() {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
+                  innerRadius={40}
+                  outerRadius={75}
                   strokeWidth={1}
                   stroke="rgba(0,0,0,0.3)"
+                  label={renderChainLabel}
+                  labelLine={false}
                 >
                   {pieData.map((entry) => (
                     <Cell
@@ -170,19 +197,24 @@ export default function ChainDistribution() {
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Legend */}
+            {/* Legend — top 8 chains */}
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2">
-              {pieData.map((entry) => {
+              {pieData.slice(0, 8).map((entry) => {
                 const total = pieData.reduce((s, e) => s + e.value, 0);
                 const pct = total > 0 ? (entry.value / total) * 100 : 0;
                 return (
-                  <span key={entry.name} className="flex items-center text-[10px] text-[#9CA3AF]">
+                  <span key={entry.name} className="flex items-center text-[10px]" style={{ color: "var(--text-muted)" }}>
                     <ChainLogo name={entry.name} size={12} color={CHAIN_COLORS[entry.name] ?? "#6B7280"} />
                     <span className="capitalize">{entry.name}</span>
-                    <span className="text-[#6B7280] ml-1">{formatPercent(pct)}</span>
+                    <span className="ml-1" style={{ color: "var(--text-muted)" }}>{formatPercent(pct)}</span>
                   </span>
                 );
               })}
+              {pieData.length > 8 && (
+                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  +{pieData.length - 8} more
+                </span>
+              )}
             </div>
           </div>
         )}

@@ -3,12 +3,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { formatNative, formatPercent, formatAddress } from "@/lib/format";
-import { TOKEN_META } from "@/lib/constants";
+import { formatNative, formatPercent, formatAddress, formatCompactUSD } from "@/lib/format";
+import { TOKEN_META, CHART_COLORS } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { TopHolderEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
+
+const RADIAN = Math.PI / 180;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function renderLabel(props: any) {
+  const { cx, cy, midAngle, innerRadius, outerRadius, name, percent } = props;
+  if (percent < 0.03) return null; // Hide labels for tiny slices
+  const radius = innerRadius + (outerRadius - innerRadius) * 1.35;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x} y={y}
+      fill="var(--text-muted)"
+      textAnchor={x > cx ? "start" : "end"}
+      dominantBaseline="central"
+      fontSize={10}
+      fontFamily="monospace"
+    >
+      {name} {(percent * 100).toFixed(0)}%
+    </text>
+  );
+}
 
 export default function TopHolders() {
   const chartFilter = useChartFilter();
@@ -20,9 +44,7 @@ export default function TopHolders() {
   >({
     queryKey: ["top-holders"],
     queryFn: async () => {
-      const res = await fetch(
-        "/api/terminal/british-stablecoin/top-holders"
-      );
+      const res = await fetch("/api/terminal/british-stablecoin/top-holders");
       if (!res.ok) throw new Error("Failed to fetch top holders");
       return res.json();
     },
@@ -34,9 +56,7 @@ export default function TopHolders() {
   >({
     queryKey: ["top-holders-eur"],
     queryFn: async () => {
-      const res = await fetch(
-        "/api/terminal/euro-stablecoin/top-holders"
-      );
+      const res = await fetch("/api/terminal/euro-stablecoin/top-holders");
       if (!res.ok) throw new Error("Failed to fetch EUR top holders");
       return res.json();
     },
@@ -51,7 +71,9 @@ export default function TopHolders() {
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
     ];
-    return all.filter((r) => chartFilter.tokenMatches(r.token));
+    return all
+      .filter((r) => chartFilter.tokenMatches(r.token))
+      .sort((a, b) => (b.balance_usd ?? 0) - (a.balance_usd ?? 0));
   }, [gbpData, eurData, chartFilter, showGbp, showEur]);
 
   // Aggregate by token for pie chart
@@ -59,7 +81,7 @@ export default function TopHolders() {
     if (!merged.length) return [];
     const byToken: Record<string, number> = {};
     for (const entry of merged) {
-      byToken[entry.token] = (byToken[entry.token] ?? 0) + (entry.balance_gbp ?? 0);
+      byToken[entry.token] = (byToken[entry.token] ?? 0) + (entry.balance_usd ?? 0);
     }
     return Object.entries(byToken)
       .map(([token, value]) => ({ name: token, value }))
@@ -92,7 +114,6 @@ export default function TopHolders() {
             selectedTokens={chartFilter.selectedTokens}
             setSelectedTokens={chartFilter.setSelectedTokens}
           />
-          <span className="tui-panel-badge">By balance</span>
         </div>
       </div>
 
@@ -102,7 +123,7 @@ export default function TopHolders() {
         ) : (
           <div className="flex flex-col items-center relative">
             <ChartWatermark />
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie
                   data={pieData}
@@ -110,15 +131,17 @@ export default function TopHolders() {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
+                  innerRadius={45}
+                  outerRadius={80}
                   strokeWidth={1}
                   stroke="rgba(0,0,0,0.3)"
+                  label={renderLabel}
+                  labelLine={false}
                 >
                   {pieData.map((entry) => (
                     <Cell
                       key={entry.name}
-                      fill={TOKEN_META[entry.name]?.color ?? "#6B7280"}
+                      fill={TOKEN_META[entry.name]?.color ?? (CHART_COLORS as Record<string, string>)[entry.name] ?? "#6B7280"}
                     />
                   ))}
                 </Pie>
@@ -130,46 +153,33 @@ export default function TopHolders() {
                     fontSize: 11,
                     fontFamily: "monospace",
                   }}
-                  formatter={(value) => [formatNative(Number(value ?? 0), chartFilter.currency)]}
+                  formatter={(value) => [formatCompactUSD(Number(value ?? 0))]}
                 />
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Legend */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2">
-              {pieData.map((entry) => {
-                const total = pieData.reduce((s, e) => s + e.value, 0);
-                const pct = total > 0 ? (entry.value / total) * 100 : 0;
-                return (
-                  <span key={entry.name} className="flex items-center text-[10px] text-[#9CA3AF]">
-                    <TokenLogo symbol={entry.name} size={12} />
-                    {entry.name}
-                    <span className="text-[#6B7280] ml-1">{formatPercent(pct)}</span>
-                  </span>
-                );
-              })}
-            </div>
-
-            {/* Top 5 holders list */}
-            <div className="w-full mt-4 space-y-0">
+            {/* Top 5 holders list — sorted by USD balance */}
+            <div className="w-full mt-2 space-y-0">
               {merged.slice(0, 5).map((entry, idx) => {
                 const meta = TOKEN_META[entry.token];
+                const color = meta?.color ?? (CHART_COLORS as Record<string, string>)[entry.token] ?? "#6B7280";
                 return (
                   <div
                     key={`${entry.address}-${idx}`}
-                    className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-b-0 text-[11px]"
+                    className="flex items-center justify-between py-1.5 border-b last:border-b-0 text-[11px]"
+                    style={{ borderColor: "var(--border)" }}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-[#6B7280] w-4">{idx + 1}</span>
-                      <span className="text-[#6B7280]">{formatAddress(entry.address)}</span>
+                      <span style={{ color: "var(--text-muted)" }} className="w-4">{idx + 1}</span>
+                      <span style={{ color: "var(--text-muted)" }}>{formatAddress(entry.address)}</span>
                       <TokenLogo symbol={entry.token} size={14} />
-                      <span style={{ color: meta?.color ?? "#E0E0E0" }} className="font-bold">
+                      <span style={{ color }} className="font-bold">
                         {entry.token}
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold">{formatNative(entry.balance_gbp, chartFilter.currency)}</span>
-                      <span className="text-[#6B7280] ml-2">{formatPercent(entry.pct_of_supply)}</span>
+                      <span className="font-bold">{formatCompactUSD(entry.balance_usd)}</span>
+                      <span className="ml-2" style={{ color: "var(--text-muted)" }}>{formatPercent(entry.pct_of_supply)}</span>
                     </div>
                   </div>
                 );
