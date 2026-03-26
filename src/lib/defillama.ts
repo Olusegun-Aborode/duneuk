@@ -83,11 +83,13 @@ export async function getEurStablecoins(): Promise<DLStablecoin[]> {
 export async function getEurMarketOverview() {
   const stables = await getEurStablecoins();
   let totalSupplyEur = 0;
-  let totalChains = 0;
+  const uniqueChains = new Set<string>();
 
   for (const s of stables) {
     totalSupplyEur += s.circulating?.peggedEUR ?? 0;
-    totalChains += Object.keys(s.chainCirculating ?? {}).length;
+    for (const chain of Object.keys(s.chainCirculating ?? {})) {
+      uniqueChains.add(chain.toLowerCase());
+    }
   }
 
   // EUR/USD rate from EURC price
@@ -99,7 +101,7 @@ export async function getEurMarketOverview() {
       total_supply_gbp: Math.round(totalSupplyEur * 100) / 100, // normalized field name
       total_supply_usd: Math.round(totalSupplyEur * eurUsdRate * 100) / 100,
       num_tokens: stables.length,
-      total_chain_deployments: totalChains,
+      total_chain_deployments: uniqueChains.size,
     }],
     lastUpdated: new Date().toISOString(),
     source: "defillama",
