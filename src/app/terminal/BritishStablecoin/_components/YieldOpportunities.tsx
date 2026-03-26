@@ -120,7 +120,8 @@ export default function YieldOpportunities() {
                 return (
                   <div
                     key={`${entry.dex}-${entry.gbp_token}-${entry.pair_token}-${idx}`}
-                    className="border border-[#2A2E35] rounded-lg p-3 bg-[#0D1117]/50 hover:border-[#3A3E45] transition-colors"
+                    className="border rounded-lg p-3 hover:border-[var(--accent-green)] transition-colors"
+                    style={{ borderColor: "var(--border)", backgroundColor: "var(--card)" }}
                   >
                     {/* Top row: DEX + Chain */}
                     <div className="flex items-center justify-between mb-2">
@@ -130,7 +131,7 @@ export default function YieldOpportunities() {
                           {entry.dex}
                         </span>
                       </span>
-                      <span className="flex items-center text-[10px] text-[#6B7280] bg-[#1A1D24] rounded px-1.5 py-0.5">
+                      <span className="flex items-center text-[10px] rounded px-1.5 py-0.5" style={{ color: "var(--text-muted)", backgroundColor: "var(--border)" }}>
                         <ChainLogo name={entry.blockchain} size={12} />
                         <span className="capitalize">{entry.blockchain}</span>
                       </span>
@@ -145,19 +146,19 @@ export default function YieldOpportunities() {
                       >
                         {entry.gbp_token}
                       </span>
-                      <span className="text-[#6B7280] mx-1">/</span>
-                      <span className="text-white text-sm font-medium">{entry.pair_token}</span>
+                      <span className="mx-1" style={{ color: "var(--text-muted)" }}>/</span>
+                      <span className="text-sm font-medium" style={{ color: "var(--foreground)" }}>{entry.pair_token}</span>
                     </div>
 
                     {/* Bottom: Volume bar + trade count */}
                     <div>
                       <div className="flex items-center justify-between text-[10px] mb-1">
-                        <span className="text-[#6B7280]">Vol 30d</span>
-                        <span className="text-white font-bold">
+                        <span style={{ color: "var(--text-muted)" }}>Vol 30d</span>
+                        <span className="font-bold" style={{ color: "var(--foreground)" }}>
                           {formatCompactUSD(entry.volume_usd_30d)}
                         </span>
                       </div>
-                      <div className="w-full h-1.5 bg-[#1A1D24] rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border)" }}>
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -166,7 +167,7 @@ export default function YieldOpportunities() {
                           }}
                         />
                       </div>
-                      <div className="text-[10px] text-[#6B7280] mt-1">
+                      <div className="text-[10px] mt-1" style={{ color: "var(--text-muted)" }}>
                         {formatNumber(entry.trade_count_30d)} trades
                       </div>
                     </div>

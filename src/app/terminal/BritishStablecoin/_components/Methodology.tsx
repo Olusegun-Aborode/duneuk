@@ -3,35 +3,53 @@
 const SECTIONS = [
   {
     title: "Token Coverage",
-    content: `Six GBP-denominated stablecoins are tracked: tGBP (TrustToken), GBPm (Mento/Celo), GBPe (Monerium), GBPT (Poundtoken), VGBP (VNX), and eGBP (Aryze). Each token is identified by its contract address on its respective chain(s). Tokens are tracked across Ethereum, Base, Polygon, Celo, Gnosis, BNB Chain, Arbitrum, Optimism, Avalanche, Solana, and other supported networks.`,
+    content: `This terminal tracks stablecoins across two currency groups:
+
+GBP (6 tokens): tGBP (TrustToken), GBPm (Mento), GBPe (Monerium), GBPT (Poundtoken), VGBP (VNX), eGBP (Aryze). Tracked across Ethereum, Base, Polygon, Celo, Gnosis, BNB Chain, Avalanche, Solana, and other networks.
+
+EUR (17+ tokens): EURC (Circle), EURCV (SG-Forge), EURI (Banking Circle), AEUR (Anchored Coins), EURe (Monerium), EURR (StablR), EURS (Stasis), EUROP (Schuman), EURm (Mento), EURA (Angle), VEUR (VNX), PAR (Mimo), EURAU (AllUnity), EURT (Tether, discontinued), and others. Tracked across 28+ chains.`,
   },
   {
     title: "Data Sources",
-    content: `Primary data comes from Dune Analytics [Dune] using both Spellbook tables (dex.trades, lending.supply, lending.borrow, stablecoins_evm.balances) and decoded contract tables (Poundtoken, Monerium events). Raw logs (celo.logs) are used for GBPm where decoded tables are unavailable. ERC-20 transfer events are used for eGBP on Polygon. Allium API [Allium] supplements Dune for Solana chain coverage (VGBP and tGBP on Solana), providing token supply, holder counts, and price data. Data source is tagged [Dune] or [Allium] throughout the UI.`,
-  },
-  {
-    title: "Lending & Borrowing",
-    content: `Lending utilization is tracked using the lending.supply and lending.borrow Spellbook tables, joined by token contract address (not symbol) across all tracked chains. This approach captures activity even when token symbols differ across protocols. GBP stablecoin lending activity is currently minimal-to-zero across major protocols (Aave, Compound, Morpho), reflecting a significant infrastructure gap.`,
+    content: `Supply data uses a hybrid approach for accuracy and coverage:
+
+DefiLlama Stablecoins API — Primary source for EUR stablecoin supply, leaderboard, chain distribution, supply history, and market share comparison. Provides consistent, deduplicated data across all EUR tokens and chains with daily historical granularity. Free, no API key required.
+
+Dune Analytics — Primary source for GBP stablecoin supply (via custom materialized views from @jreytgbp and spellbook tables). Also the primary source for on-chain activity data across both currencies: DEX trades (dex.trades), lending (lending.supply, lending.borrow), transfer volume (erc20_{chain}.evt_Transfer), daily active users, and top holder analysis.
+
+Allium API — Supplements Dune for Solana chain coverage (VGBP, tGBP on Solana), providing token supply, holder counts, and price data.
+
+Data source is tagged [Dune], [DefiLlama], or [Allium] throughout the UI.`,
   },
   {
     title: "Supply Calculation",
-    content: `Token supply is calculated by reconstructing mint/burn balances from on-chain events. For tGBP, pre-computed tables from the jreytgbp dataset are used. For GBPm, raw Transfer events from celo.logs are decoded using the ERC-20 topic0 hash, with uint256 values cast to DOUBLE before arithmetic to prevent overflow. GBPT and GBPe use decoded Mint/Burn events. VGBP uses the stablecoins_evm.balances spellbook on EVM chains, supplemented by Allium for Solana supply data.`,
+    content: `GBP tokens: Supply reconstructed from mint/burn events. tGBP uses pre-computed tables from the jreytgbp Dune dataset. GBPm uses raw Transfer events from celo.logs. GBPT and GBPe use decoded Mint/Burn events. VGBP uses stablecoins_evm.balances spellbook + Allium for Solana.
+
+EUR tokens: Supply sourced from DefiLlama's stablecoins_multichain.balances, which aggregates on-chain data across all supported chains. This provides consistent cross-chain supply tracking without the need for per-token custom queries.`,
   },
   {
     title: "DEX & Market Data",
-    content: `DEX volume and trading pair data comes from the dex.trades Spellbook table, which aggregates decoded swap events across Uniswap, Curve, Aerodrome, Mento, PancakeSwap, Balancer, and other DEXes. Market share comparison uses stablecoins_evm.balances to compare GBP stablecoin supply against USDT, USDC, EURC, and EURT, with Solana GBP tokens added via Allium.`,
+    content: `DEX volume and trading pair data comes from the dex.trades Spellbook table on Dune, which aggregates decoded swap events across Uniswap, Curve, Aerodrome, PancakeSwap, Balancer, Trader Joe, and 20+ other DEXes. Volume is tracked per-token per-DEX per-chain with weekly aggregation. The LP Pools view shows individual trading pair activity over 30 days with a minimum 5-trade threshold.`,
   },
   {
-    title: "Aggregation & Caching",
-    content: `Time-series data is aggregated using DATE_TRUNC('week', ...) for weekly bucketing. All API responses are cached server-side with a 6-hour TTL to balance freshness with API rate limits. Supply snapshots use the most recent available day from the spellbook balance tables. Allium data follows the same 6-hour cache pattern.`,
+    title: "Lending & Borrowing",
+    content: `Lending utilization tracked via Dune's lending.supply and lending.borrow Spellbook tables, joined by token contract address across all tracked chains. EUR stablecoins (particularly EURC) have active lending markets on Aave and Morpho. GBP stablecoin lending activity remains minimal across major protocols, reflecting a significant infrastructure gap.`,
   },
   {
-    title: "CEX Coverage",
-    content: `CEX listings vary significantly across the six tokens. tGBP is listed on Kraken (since November 2025) with 6 trading pairs. VGBP is listed on Coinbase with USD/EUR/CAD pairs. GBPT is on CEX.IO (with historical listings on Gate.io and Bittrex Global, now defunct) and integrated with Fireblocks (1,300+ institutions). eGBP is listed on Mercado Bitcoin (Latin America). GBPe has minimal presence on LBank. GBPm has no confirmed CEX listings. None of the six tokens are listed on Binance, Bybit, or OKX. On-chain CEX flow data (deposits/withdrawals to exchange wallets) is not currently tracked in this terminal due to limitations in available labelled wallet datasets.`,
+    title: "Market Share Comparison",
+    content: `Market share comparison uses DefiLlama's stablecoins API to compare total supply across GBP, EUR, and USD stablecoin groups. This provides an accurate, consistent cross-currency comparison using the same data methodology. EUR/USD and GBP/USD rates are sourced from the ECB via the Frankfurter API and EURC market price respectively.`,
+  },
+  {
+    title: "Caching & Freshness",
+    content: `DefiLlama data: 30-minute server-side cache. Dune data: 6-hour cache TTL. Allium data: 6-hour cache. Time-series data uses DATE_TRUNC for weekly/daily bucketing. Supply snapshots use the most recent available day (typically 2 days lag from the spellbook).`,
+  },
+  {
+    title: "Per-Chart Filtering",
+    content: `Each chart has its own independent currency filter (GBP / EUR / ALL) and token selector. In ALL mode, supply values are displayed in USD as a common denominator. In single-currency mode, native currency formatting (£ / €) is used. Filters are local to each chart — changing one doesn't affect others.`,
   },
   {
     title: "Limitations",
-    content: `This terminal tracks on-chain activity only. Off-chain / CEX trading volumes, OTC desk flows, and custodial balances are not captured. Wrapped or bridged token variants may be tracked separately from their canonical versions. GBP/USD conversion uses approximate market rates. Some tokens have limited historical data availability. Lending utilization data is sparse for GBP stablecoins due to limited DeFi protocol integration.`,
+    content: `This terminal tracks on-chain activity only. Off-chain / CEX trading volumes, OTC desk flows, and custodial balances are not captured. Wrapped or bridged token variants may be tracked separately. Currency conversions use approximate market rates. Some smaller EUR tokens have limited DEX/lending activity. EURT (Tether Euro) was discontinued in November 2025 — historical data is retained.`,
   },
 ];
 
@@ -46,18 +64,18 @@ export default function Methodology() {
       <div className="p-4 lg:p-5 space-y-4">
         {SECTIONS.map((section) => (
           <div key={section.title}>
-            <h4 className="text-[11px] text-[#FF6B35] font-bold uppercase tracking-wider mb-1.5">
+            <h4 className="text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: "var(--accent-red)" }}>
               {section.title}
             </h4>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+            <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: "var(--text-muted)" }}>
               {section.content}
             </p>
           </div>
         ))}
 
-        <div className="border-t border-[#1a1d24] pt-3 mt-3">
-          <p className="text-[10px] text-[#6B7280]">
-            Built by DuneUK &middot; Data: Dune Analytics + Allium &middot;
+        <div className="border-t pt-3 mt-3" style={{ borderColor: "var(--border)" }}>
+          <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+            Built by DuneUK &middot; Data: DefiLlama + Dune Analytics + Allium &middot;
             Last methodology update: March 2026
           </p>
         </div>

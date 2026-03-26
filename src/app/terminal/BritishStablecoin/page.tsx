@@ -127,18 +127,6 @@ function UtilisationTab() {
 
 export default function BritishStablecoinPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
-  const [pendingTab, setPendingTab] = useState<TabId | null>(null);
-
-  // Two-frame tab switch: paint button highlight immediately, swap content next frame
-  const switchTab = useCallback((tab: TabId) => {
-    setPendingTab(tab);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setActiveTab(tab);
-        setPendingTab(null);
-      });
-    });
-  }, []);
 
   return (
     <CurrencyFilterProvider>
@@ -170,32 +158,35 @@ export default function BritishStablecoinPage() {
 
         {/* Tab nav */}
         <nav className="flex gap-0.5 border-b border-[var(--border)]">
-          {TABS.map((tab) => {
-            const isActive = (pendingTab ?? activeTab) === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => switchTab(tab.id)}
-                className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
-                  isActive
-                    ? "text-[var(--accent-green)] border-[var(--accent-green)]"
-                    : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "text-[var(--accent-green)] border-[var(--accent-green)]"
+                  : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </nav>
 
         {/* Counters row */}
         <MarketOverview />
 
-        {/* Gated content */}
+        {/* Gated content — all tabs stay mounted, hidden via CSS for instant switching */}
         <EmailGate>
-          {activeTab === "overview" && <OverviewTab />}
-          {activeTab === "utilisation" && <UtilisationTab />}
-          {activeTab === "methodology" && <Methodology />}
+          <div style={{ display: activeTab === "overview" ? "block" : "none" }}>
+            <OverviewTab />
+          </div>
+          <div style={{ display: activeTab === "utilisation" ? "block" : "none" }}>
+            <UtilisationTab />
+          </div>
+          <div style={{ display: activeTab === "methodology" ? "block" : "none" }}>
+            <Methodology />
+          </div>
         </EmailGate>
 
         {/* Newsletter — always visible below gated content */}
