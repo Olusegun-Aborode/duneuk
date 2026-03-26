@@ -15,13 +15,13 @@ import {
 import { formatCompactUSD, formatNumber } from "@/lib/format";
 import { DEX_COLORS } from "@/lib/constants";
 import type { DexPlatformEntry, DuneApiResponse } from "@/lib/types";
-import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import ChartWatermark from "./ChartWatermark";
 
 export default function DexPlatforms() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<DexPlatformEntry>
@@ -98,7 +98,16 @@ export default function DexPlatforms() {
     <div className="tui-panel overflow-x-auto">
       <div className="tui-panel-header">
         <span className="tui-panel-title">DEX Platforms <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">90 days</span>
+        <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
+          <span className="tui-panel-badge">90 days</span>
+        </div>
       </div>
 
       <div className="p-4">

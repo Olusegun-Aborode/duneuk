@@ -156,27 +156,22 @@ export default function BritishStablecoinPage() {
           </div>
         </div>
 
-        {/* Sticky filter + tab nav bar */}
-        <div className="sticky top-0 z-30 -mx-4 px-4 py-2 backdrop-blur-md" style={{ backgroundColor: "var(--background-translucent, rgba(17,19,24,0.92))" }}>
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <nav className="flex gap-0.5">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`text-[11px] uppercase tracking-wider px-4 py-1.5 border-b-2 transition-colors ${
-                    activeTab === tab.id
-                      ? "text-[var(--accent-green)] border-[var(--accent-green)]"
-                      : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-            <CurrencyFilter />
-          </div>
-        </div>
+        {/* Tab nav */}
+        <nav className="flex gap-0.5 border-b border-[var(--border)]">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "text-[var(--accent-green)] border-[var(--accent-green)]"
+                  : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
         {/* Counters row */}
         <MarketOverview />

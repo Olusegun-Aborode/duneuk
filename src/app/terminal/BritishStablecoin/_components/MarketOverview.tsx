@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { formatGBP, formatEUR, formatUSD, formatNumber, timeAgo } from "@/lib/format";
-import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import type {
   MarketOverview as MarketOverviewType,
   DuneApiResponse,
@@ -18,9 +18,9 @@ function CounterSkeleton() {
 }
 
 export default function MarketOverview() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<MarketOverviewType>
@@ -112,7 +112,7 @@ export default function MarketOverview() {
 
   // In ALL mode: show combined USD as primary, with GBP+EUR breakdown below
   // In single currency mode: show native supply as primary, USD as secondary
-  const counters = currency === "ALL" ? [
+  const counters = chartFilter.currency === "ALL" ? [
     {
       label: "Total Supply (USD)",
       value: totalUsdValue() > 0 ? formatUSD(totalUsdValue()) : null,
@@ -140,10 +140,10 @@ export default function MarketOverview() {
     },
   ] : [
     {
-      label: `Total Supply (${currency})`,
-      value: currency === "GBP" && gbpOverview
+      label: `Total Supply (${chartFilter.currency})`,
+      value: chartFilter.currency === "GBP" && gbpOverview
         ? formatGBP(gbpOverview.total_supply_gbp)
-        : currency === "EUR" && eurOverview
+        : chartFilter.currency === "EUR" && eurOverview
           ? formatEUR(eurOverview.total_supply_gbp)
           : null,
       accent: true,
@@ -154,7 +154,7 @@ export default function MarketOverview() {
       accent: false,
     },
     {
-      label: `${currency}/USD Rate`,
+      label: `${chartFilter.currency}/USD Rate`,
       value: gbpUsdRate !== null ? `$${gbpUsdRate.toFixed(4)}` : "\u2014",
       accent: false,
       sub: gbpUsdRate !== null ? (isLiveRate ? "[ECB]" : "[cached]") : undefined,
@@ -171,6 +171,13 @@ export default function MarketOverview() {
       <div className="tui-panel-header">
         <span className="tui-panel-title">Market Overview</span>
         <div className="flex items-center gap-3">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
           {lastUpdated && (
             <span className="tui-panel-badge">
               Updated {timeAgo(new Date(lastUpdated))}

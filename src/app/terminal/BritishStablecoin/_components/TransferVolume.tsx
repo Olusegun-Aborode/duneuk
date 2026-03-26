@@ -15,7 +15,7 @@ import { formatNative, formatNumber } from "@/lib/format";
 import { TOKEN_META, CHART_COLORS } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { TransferVolumeEntry, DuneApiResponse } from "@/lib/types";
-import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import ChartWatermark from "./ChartWatermark";
 
 function SkeletonRow() {
@@ -40,9 +40,9 @@ interface ChainRow {
 }
 
 export default function TransferVolume() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
   const [showTable, setShowTable] = useState(false);
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
@@ -81,8 +81,8 @@ export default function TransferVolume() {
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
     ];
-    return { data: all.filter((r) => tokenMatchesCurrency(r.token, currency)) };
-  }, [gbpData, eurData, currency, showGbp, showEur]);
+    return { data: all.filter((r) => chartFilter.tokenMatches(r.token)) };
+  }, [gbpData, eurData, chartFilter, showGbp, showEur]);
 
   const { chartData, tokens } = useMemo(() => {
     if (!data.data?.length) return { chartData: [], tokens: [] };
@@ -131,6 +131,13 @@ export default function TransferVolume() {
       <div className="tui-panel-header">
         <span className="tui-panel-title">Transfer Volume <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
         <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
           <button
             onClick={() => setShowTable((v) => !v)}
             className="text-[9px] px-1.5 py-0.5 rounded border border-white/10 hover:border-white/20 text-[#6B7280] hover:text-[#E0E0E0] transition-colors"
@@ -169,7 +176,7 @@ export default function TransferVolume() {
                 />
                 <XAxis
                   type="number"
-                  tickFormatter={(v: number) => formatNative(v, currency)}
+                  tickFormatter={(v: number) => formatNative(v, chartFilter.currency)}
                   tick={{ fill: "#6B7280", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
@@ -210,7 +217,7 @@ export default function TransferVolume() {
                           {label}
                         </div>
                         <div style={{ color: "#6B7280" }}>
-                          Volume: <span style={{ color: "#E0E0E0" }}>{formatNative(row.total_volume, currency)}</span>
+                          Volume: <span style={{ color: "#E0E0E0" }}>{formatNative(row.total_volume, chartFilter.currency)}</span>
                         </div>
                         <div style={{ color: "#6B7280" }}>
                           Transfers: <span style={{ color: "#E0E0E0" }}>{formatNumber(row.num_transfers)}</span>
@@ -250,7 +257,7 @@ export default function TransferVolume() {
               <th>Chain</th>
               <th>Token</th>
               <th className="text-right">Transfers</th>
-              <th className="text-right">Volume ({currency === "ALL" ? "Native" : currency})</th>
+              <th className="text-right">Volume ({chartFilter.currency === "ALL" ? "Native" : chartFilter.currency})</th>
               <th className="text-right">Senders</th>
               <th className="text-right">Receivers</th>
             </tr>
@@ -276,7 +283,7 @@ export default function TransferVolume() {
                     {formatNumber(entry.num_transfers)}
                   </td>
                   <td className="text-right font-bold">
-                    {formatNative(entry.volume_gbp, currency)}
+                    {formatNative(entry.volume_gbp, chartFilter.currency)}
                   </td>
                   <td className="text-right text-[#6B7280]">
                     {formatNumber(entry.unique_senders)}

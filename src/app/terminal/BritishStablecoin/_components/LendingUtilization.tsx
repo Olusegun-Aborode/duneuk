@@ -16,7 +16,7 @@ import { TOKEN_META } from "@/lib/constants";
 import InsightPanel from "./InsightPanel";
 import ChartWatermark from "./ChartWatermark";
 import type { LendingUtilizationEntry, DuneApiResponse } from "@/lib/types";
-import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 
 interface ChartRow {
   label: string;
@@ -61,9 +61,9 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
 }
 
 export default function LendingUtilization() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<LendingUtilizationEntry>
@@ -101,8 +101,8 @@ export default function LendingUtilization() {
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
     ];
-    return { data: all.filter((r) => tokenMatchesCurrency(r.token, currency)) };
-  }, [gbpData, eurData, currency, showGbp, showEur]);
+    return { data: all.filter((r) => chartFilter.tokenMatches(r.token)) };
+  }, [gbpData, eurData, chartFilter, showGbp, showEur]);
 
   if (error) {
     return (
@@ -185,7 +185,16 @@ export default function LendingUtilization() {
     <div className="tui-panel relative">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Lending & Borrowing <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">Since Jan 2025</span>
+        <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
+          <span className="tui-panel-badge">Since Jan 2025</span>
+        </div>
       </div>
       <div className="px-2 pt-2 pb-1">
         <ResponsiveContainer width="100%" height={240}>

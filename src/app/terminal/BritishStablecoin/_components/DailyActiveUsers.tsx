@@ -17,7 +17,7 @@ import type { DailyActiveUsersEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
 import { TokenLogo } from "@/components/TokenLogo";
 import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
-import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 
 function pivotData(rows: DailyActiveUsersEntry[]) {
   const byDay: Record<string, Record<string, number>> = {};
@@ -40,9 +40,9 @@ function formatDateAxis(dateStr: string) {
 }
 
 export default function DailyActiveUsers() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
   const [range, setRange] = useState<TimeRange>("90d");
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
@@ -81,8 +81,8 @@ export default function DailyActiveUsers() {
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
     ];
-    return all.filter((r) => tokenMatchesCurrency(r.token, currency));
-  }, [gbpData, eurData, currency, showGbp, showEur]);
+    return all.filter((r) => chartFilter.tokenMatches(r.token));
+  }, [gbpData, eurData, chartFilter, showGbp, showEur]);
 
   const chartData = useMemo(() => {
     if (!merged.length) return [];
@@ -122,7 +122,16 @@ export default function DailyActiveUsers() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Daily Active Users <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <TimeRangeSelector value={range} onChange={setRange} />
+        <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
+          <TimeRangeSelector value={range} onChange={setRange} />
+        </div>
       </div>
 
       <div className="p-4">

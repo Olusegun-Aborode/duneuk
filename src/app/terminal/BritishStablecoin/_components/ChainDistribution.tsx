@@ -8,7 +8,7 @@ import { TOKEN_META } from "@/lib/constants";
 import type { ChainDistributionEntry, DuneApiResponse } from "@/lib/types";
 import { ChainLogo } from "@/components/ChainLogo";
 import ChartWatermark from "./ChartWatermark";
-import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 
 const CHAIN_COLORS: Record<string, string> = {
   ethereum: "#627EEA",
@@ -24,9 +24,9 @@ const CHAIN_COLORS: Record<string, string> = {
 };
 
 export default function ChainDistribution() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<ChainDistributionEntry>
@@ -64,8 +64,8 @@ export default function ChainDistribution() {
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
     ];
-    return all.filter((r) => tokenMatchesCurrency(r.token, currency));
-  }, [gbpData, eurData, currency, showGbp, showEur]);
+    return all.filter((r) => chartFilter.tokenMatches(r.token));
+  }, [gbpData, eurData, chartFilter, showGbp, showEur]);
 
   // Aggregate by chain for the pie chart
   const pieData = useMemo(() => {
@@ -97,7 +97,16 @@ export default function ChainDistribution() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Chain Distribution <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">Supply by chain</span>
+        <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
+          <span className="tui-panel-badge">Supply by chain</span>
+        </div>
       </div>
 
       <div className="p-4">
@@ -134,7 +143,7 @@ export default function ChainDistribution() {
                     fontSize: 11,
                     fontFamily: "monospace",
                   }}
-                  formatter={(value) => [formatNative(Number(value ?? 0), currency)]}
+                  formatter={(value) => [formatNative(Number(value ?? 0), chartFilter.currency)]}
                   labelFormatter={(label) => String(label).charAt(0).toUpperCase() + String(label).slice(1)}
                 />
               </PieChart>

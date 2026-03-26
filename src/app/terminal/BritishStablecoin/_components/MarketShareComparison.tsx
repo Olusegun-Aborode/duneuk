@@ -14,7 +14,8 @@ import {
 import { formatCompactUSD } from "@/lib/format";
 import { CHART_COLORS } from "@/lib/constants";
 import type { MarketShareEntry, MarketOverview, SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
-import { useCurrencyFilter, GBP_TOKENS, EUR_TOKENS } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
+import { GBP_TOKENS, EUR_TOKENS } from "@/contexts/CurrencyFilterContext";
 import ChartWatermark from "./ChartWatermark";
 import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
 
@@ -50,9 +51,9 @@ function getCurrencyGroup(token: string): "GBP" | "EUR" | null {
 }
 
 export default function MarketShareComparison() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
   const [range, setRange] = useState<TimeRange>("180d");
 
   // Market share per-token breakdown (for counters)
@@ -292,6 +293,13 @@ export default function MarketShareComparison() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
           <span className="tui-panel-badge">GBP vs USD vs EUR</span>
           <TimeRangeSelector value={range} onChange={setRange} />
         </div>

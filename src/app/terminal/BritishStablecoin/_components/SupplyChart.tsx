@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { CHART_COLORS } from "@/lib/constants";
 import { formatGBP, formatEUR, formatUSD, formatNative } from "@/lib/format";
-import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import type { SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
 import { TokenLogo } from "@/components/TokenLogo";
@@ -41,10 +41,10 @@ function formatDateAxis(dateStr: string) {
 
 export default function SupplyChart() {
   const [range, setRange] = useState<TimeRange>("180d");
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
-  const useUsd = currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
+  const useUsd = chartFilter.currency === "ALL";
 
   const gbp = useQuery<DuneApiResponse<SupplyHistoryEntry>>({
     queryKey: ["supply-history-gbp"],
@@ -76,24 +76,28 @@ export default function SupplyChart() {
     return rows;
   }, [gbp.data, eur.data, showGbp, showEur]);
 
+  const filteredRows = useMemo(() => {
+    return allRows.filter((r) => chartFilter.tokenMatches(r.token));
+  }, [allRows, chartFilter]);
+
   const chartData = useMemo(() => {
-    if (!allRows.length) return [];
+    if (!filteredRows.length) return [];
     const cutoff = getCutoffDate(range);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    const filtered = allRows.filter((r) => {
+    const filtered = filteredRows.filter((r) => {
       const d = new Date(r.day);
       if (d > today) return false;
       if (cutoff && d < cutoff) return false;
       return true;
     });
     return pivotData(filtered, useUsd);
-  }, [allRows, range, useUsd]);
+  }, [filteredRows, range, useUsd]);
 
   const tokens = useMemo(() => {
-    if (!allRows.length) return [];
-    return [...new Set(allRows.map((r) => r.token))];
-  }, [allRows]);
+    if (!filteredRows.length) return [];
+    return [...new Set(filteredRows.map((r) => r.token))];
+  }, [filteredRows]);
 
 
   if (error) {
@@ -114,7 +118,16 @@ export default function SupplyChart() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Supply Over Time <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <TimeRangeSelector value={range} onChange={setRange} />
+        <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
+          <TimeRangeSelector value={range} onChange={setRange} />
+        </div>
       </div>
 
       <div className="p-4">
@@ -148,7 +161,7 @@ export default function SupplyChart() {
                 tickLine={false}
               />
               <YAxis
-                tickFormatter={(v: number) => formatNative(v, currency)}
+                tickFormatter={(v: number) => formatNative(v, chartFilter.currency)}
                 tick={{ fill: "#6B7280", fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
@@ -164,7 +177,7 @@ export default function SupplyChart() {
                 }}
                 labelStyle={{ color: "#6B7280" }}
                 formatter={(value, name) => [
-                  formatNative(Number(value ?? 0), currency),
+                  formatNative(Number(value ?? 0), chartFilter.currency),
                   String(name),
                 ]}
               />

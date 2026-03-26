@@ -8,7 +8,7 @@ import { DexLogo } from "@/components/DexLogo";
 import { ChainLogo } from "@/components/ChainLogo";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { DexPoolEntry, DuneApiResponse } from "@/lib/types";
-import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import Link from "next/link";
 
 const DEFAULT_VISIBLE = 9;
@@ -24,9 +24,9 @@ function SkeletonCard() {
 }
 
 export default function YieldOpportunities() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<DexPoolEntry>
@@ -64,8 +64,8 @@ export default function YieldOpportunities() {
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
     ];
-    return { data: all.filter((r) => tokenMatchesCurrency(r.gbp_token, currency)) };
-  }, [gbpData, eurData, currency, showGbp, showEur]);
+    return { data: all.filter((r) => chartFilter.tokenMatches(r.gbp_token)) };
+  }, [gbpData, eurData, chartFilter, showGbp, showEur]);
 
   if (error) {
     return (
@@ -91,7 +91,16 @@ export default function YieldOpportunities() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Active LP Pools <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">30 days · min 5 trades</span>
+        <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
+          <span className="tui-panel-badge">30 days · min 5 trades</span>
+        </div>
       </div>
       <div className="p-3">
         {isLoading ? (

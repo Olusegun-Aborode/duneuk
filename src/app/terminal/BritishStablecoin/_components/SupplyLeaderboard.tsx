@@ -5,7 +5,8 @@ import Link from "next/link";
 import { formatGBP, formatEUR, formatUSD, formatPercent, formatNumber, formatNative } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
-import { useCurrencyFilter, type CurrencyFilter } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
+import type { CurrencyFilter } from "@/contexts/CurrencyFilterContext";
 import type { LeaderboardEntry, DuneApiResponse } from "@/lib/types";
 
 function SkeletonRow() {
@@ -62,8 +63,8 @@ function useLeaderboardData(currency: CurrencyFilter) {
 }
 
 export default function SupplyLeaderboard() {
-  const { currency } = useCurrencyFilter();
-  const { data: entries, isLoading, error, lastUpdated } = useLeaderboardData(currency);
+  const chartFilter = useChartFilter();
+  const { data: entries, isLoading, error, lastUpdated } = useLeaderboardData(chartFilter.currency);
 
   if (error) {
     return (
@@ -83,7 +84,16 @@ export default function SupplyLeaderboard() {
     <div className="tui-panel overflow-x-auto">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Supply Leaderboard</span>
-        <span className="tui-panel-badge">Ranked by market share <span className="text-[9px] text-[#5B7FFF] ml-1">[Dune]</span></span>
+        <div className="flex items-center gap-2">
+          <span className="tui-panel-badge">Ranked by market share <span className="text-[9px] text-[#5B7FFF] ml-1">[Dune]</span></span>
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
+        </div>
       </div>
       <table className="data-table">
         <thead>
@@ -92,7 +102,7 @@ export default function SupplyLeaderboard() {
             <th>Token</th>
             <th>Issuer</th>
             <th>Chains</th>
-            <th className="text-right">Supply ({currency === "ALL" ? "Native" : currency})</th>
+            <th className="text-right">Supply ({chartFilter.currency === "ALL" ? "Native" : chartFilter.currency})</th>
             <th className="text-right">Supply (USD)</th>
             <th className="text-right">Share</th>
           </tr>
@@ -124,7 +134,7 @@ export default function SupplyLeaderboard() {
                     <td className="text-[#6B7280]">{entry.issuer}</td>
                     <td>{formatNumber(entry.num_chains)}</td>
                     <td className="text-right font-bold">
-                      {currency === "ALL" ? formatUSD(entry.supply_usd) : nativeFormat(entry.supply_gbp)}
+                      {chartFilter.currency === "ALL" ? formatUSD(entry.supply_usd) : nativeFormat(entry.supply_gbp)}
                     </td>
                     <td className="text-right text-[#6B7280]">
                       {formatUSD(entry.supply_usd)}

@@ -8,12 +8,12 @@ import { TOKEN_META } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { TopHolderEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
-import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 
 export default function TopHolders() {
-  const { currency } = useCurrencyFilter();
-  const showGbp = currency === "GBP" || currency === "ALL";
-  const showEur = currency === "EUR" || currency === "ALL";
+  const chartFilter = useChartFilter();
+  const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
+  const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<TopHolderEntry>
@@ -51,8 +51,8 @@ export default function TopHolders() {
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
     ];
-    return all.filter((r) => tokenMatchesCurrency(r.token, currency));
-  }, [gbpData, eurData, currency, showGbp, showEur]);
+    return all.filter((r) => chartFilter.tokenMatches(r.token));
+  }, [gbpData, eurData, chartFilter, showGbp, showEur]);
 
   // Aggregate by token for pie chart
   const pieData = useMemo(() => {
@@ -84,7 +84,16 @@ export default function TopHolders() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Top Holders <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">By balance</span>
+        <div className="flex items-center gap-2">
+          <ChartFilter
+            currency={chartFilter.currency}
+            setCurrency={chartFilter.setCurrency}
+            tokens={chartFilter.tokens}
+            selectedTokens={chartFilter.selectedTokens}
+            setSelectedTokens={chartFilter.setSelectedTokens}
+          />
+          <span className="tui-panel-badge">By balance</span>
+        </div>
       </div>
 
       <div className="p-4">
@@ -121,7 +130,7 @@ export default function TopHolders() {
                     fontSize: 11,
                     fontFamily: "monospace",
                   }}
-                  formatter={(value) => [formatNative(Number(value ?? 0), currency)]}
+                  formatter={(value) => [formatNative(Number(value ?? 0), chartFilter.currency)]}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -159,7 +168,7 @@ export default function TopHolders() {
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold">{formatNative(entry.balance_gbp, currency)}</span>
+                      <span className="font-bold">{formatNative(entry.balance_gbp, chartFilter.currency)}</span>
                       <span className="text-[#6B7280] ml-2">{formatPercent(entry.pct_of_supply)}</span>
                     </div>
                   </div>
