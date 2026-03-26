@@ -66,6 +66,12 @@ export const TOKEN_LOGOS: Record<string, string> = {
   USDC: "/tokens/USDC.png",
   EURC: "/tokens/EURC.png",
   EURT: "/tokens/EURT.png",
+  EURS: "/tokens/EURS.png",
+  EURA: "/tokens/EURA.png",
+  EURe: "/tokens/EURe.png",
+  EURCV: "/tokens/EURCV.png",
+  PAR: "/tokens/PAR.png",
+  sEUR: "/tokens/sEUR.png",
 };
 
 export const CHAIN_LOGOS: Record<string, string> = {

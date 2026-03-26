@@ -2,12 +2,63 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import { formatCompactUSD, formatNumber, formatPercent } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
-import { TokenLogo } from "@/components/TokenLogo";
 import InsightPanel from "./InsightPanel";
+import ChartWatermark from "./ChartWatermark";
 import type { LendingUtilizationEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+
+interface ChartRow {
+  label: string;
+  supplied: number;
+  borrowed: number;
+  utilization_rate: number;
+  project: string;
+  token: string;
+  suppliers: number;
+  borrowers: number;
+}
+
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: ChartRow }> }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <div className="bg-[#0D1117] border border-[#2A2E35] rounded px-3 py-2 text-xs shadow-lg">
+      <div className="text-white font-bold capitalize mb-1">{d.project}</div>
+      <div className="text-[#A0A0A0] mb-1">{d.token}</div>
+      <div className="flex justify-between gap-4">
+        <span className="text-[#6B7280]">Supplied</span>
+        <span className="text-[#00FF88] font-bold">{formatCompactUSD(d.supplied)}</span>
+      </div>
+      <div className="flex justify-between gap-4">
+        <span className="text-[#6B7280]">Borrowed</span>
+        <span className="text-[#FF6B35] font-bold">{formatCompactUSD(d.borrowed)}</span>
+      </div>
+      <div className="flex justify-between gap-4">
+        <span className="text-[#6B7280]">Utilization</span>
+        <span className="text-white">{formatPercent(d.utilization_rate * 100)}</span>
+      </div>
+      <div className="flex justify-between gap-4 mt-1 pt-1 border-t border-[#2A2E35]">
+        <span className="text-[#6B7280]">Suppliers</span>
+        <span className="text-white">{formatNumber(d.suppliers)}</span>
+      </div>
+      <div className="flex justify-between gap-4">
+        <span className="text-[#6B7280]">Borrowers</span>
+        <span className="text-white">{formatNumber(d.borrowers)}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function LendingUtilization() {
   const { currency } = useCurrencyFilter();
@@ -107,63 +158,62 @@ export default function LendingUtilization() {
     );
   }
 
+  const chartData: ChartRow[] = activeRows.map((e) => ({
+    label: `${e.project} / ${e.token}`,
+    supplied: e.supply_usd ?? 0,
+    borrowed: e.borrow_usd ?? 0,
+    utilization_rate: e.utilization_rate ?? 0,
+    project: e.project,
+    token: e.token,
+    suppliers: e.suppliers ?? 0,
+    borrowers: e.borrowers ?? 0,
+  }));
+
   return (
-    <div className="tui-panel overflow-x-auto">
+    <div className="tui-panel relative">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Lending & Borrowing <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
         <span className="tui-panel-badge">Since Jan 2025</span>
       </div>
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Protocol</th>
-            <th>Chain</th>
-            <th>Token</th>
-            <th className="text-right">Supplied</th>
-            <th className="text-right">Borrowed</th>
-            <th className="text-right">Util.</th>
-            <th className="text-right">Users</th>
-          </tr>
-        </thead>
-        <tbody>
-          {activeRows.map((entry, idx) => {
-            const meta = TOKEN_META[entry.token];
-            const utilPct = (entry.utilization_rate ?? 0) * 100;
-            return (
-              <tr key={`${entry.project}-${entry.token}-${idx}`}>
-                <td className="capitalize font-bold">{entry.project}</td>
-                <td className="capitalize">{entry.blockchain}</td>
-                <td>
-                  <span className="flex items-center">
-                    <TokenLogo symbol={entry.token} size={16} />
-                    <span style={{ color: meta?.color ?? "#E0E0E0" }}>
-                      {entry.token}
-                    </span>
-                  </span>
-                </td>
-                <td className="text-right">{formatCompactUSD(entry.supply_usd)}</td>
-                <td className="text-right">{formatCompactUSD(entry.borrow_usd)}</td>
-                <td className="text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    <div className="w-10 h-1.5 bg-[#1a1d24] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[#FF6B35]"
-                        style={{ width: `${Math.min(utilPct, 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-[#6B7280]">
-                      {formatPercent(utilPct)}
-                    </span>
-                  </div>
-                </td>
-                <td className="text-right text-[#6B7280]">
-                  {formatNumber((entry.suppliers ?? 0) + (entry.borrowers ?? 0))}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="px-2 pt-2 pb-1">
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={chartData} margin={{ top: 8, right: 12, left: 4, bottom: 24 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1E2028" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "#6B7280" }}
+              tickLine={false}
+              axisLine={{ stroke: "#2A2E35" }}
+              angle={-20}
+              textAnchor="end"
+              height={50}
+              interval={0}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: "#6B7280" }}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v: number) => formatCompactUSD(v)}
+              width={54}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+            <Bar dataKey="supplied" name="Supplied" fill="#00FF88" radius={[3, 3, 0, 0]} barSize={18} />
+            <Bar dataKey="borrowed" name="Borrowed" fill="#FF6B35" radius={[3, 3, 0, 0]} barSize={18} />
+          </BarChart>
+        </ResponsiveContainer>
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-4 text-[10px] text-[#6B7280] -mt-1 mb-1">
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#00FF88" }} />
+            Supplied
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: "#FF6B35" }} />
+            Borrowed
+          </span>
+        </div>
+      </div>
+      <ChartWatermark />
     </div>
   );
 }

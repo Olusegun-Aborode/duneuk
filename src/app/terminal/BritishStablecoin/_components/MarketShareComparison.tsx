@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { formatCompactUSD } from "@/lib/format";
 import { CHART_COLORS } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
-import type { MarketShareEntry, DuneApiResponse } from "@/lib/types";
+import type { MarketShareEntry, MarketOverview, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
 
 const GROUP_COLORS: Record<string, string> = {
@@ -29,14 +29,13 @@ export default function MarketShareComparison() {
   const showGbp = currency === "GBP" || currency === "ALL";
   const showEur = currency === "EUR" || currency === "ALL";
 
+  // Market share per-token breakdown
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<MarketShareEntry>
   >({
     queryKey: ["market-share"],
     queryFn: async () => {
-      const res = await fetch(
-        "/api/terminal/british-stablecoin/market-share"
-      );
+      const res = await fetch("/api/terminal/british-stablecoin/market-share");
       if (!res.ok) throw new Error("Failed to fetch market share");
       return res.json();
     },
@@ -48,10 +47,29 @@ export default function MarketShareComparison() {
   >({
     queryKey: ["market-share-eur"],
     queryFn: async () => {
-      const res = await fetch(
-        "/api/terminal/euro-stablecoin/market-share"
-      );
+      const res = await fetch("/api/terminal/euro-stablecoin/market-share");
       if (!res.ok) throw new Error("Failed to fetch EUR market share");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  // Accurate totals from overview endpoints (fixes data mismatch)
+  const { data: gbpOverview } = useQuery<DuneApiResponse<MarketOverview>>({
+    queryKey: ["market-overview-gbp"],
+    queryFn: async () => {
+      const res = await fetch("/api/terminal/british-stablecoin/overview");
+      if (!res.ok) throw new Error("overview");
+      return res.json();
+    },
+    enabled: showGbp,
+  });
+
+  const { data: eurOverview } = useQuery<DuneApiResponse<MarketOverview>>({
+    queryKey: ["market-overview-eur"],
+    queryFn: async () => {
+      const res = await fetch("/api/terminal/euro-stablecoin/overview");
+      if (!res.ok) throw new Error("overview");
       return res.json();
     },
     enabled: showEur,
@@ -106,10 +124,14 @@ export default function MarketShareComparison() {
 
     const allRows = [...duneRows, ...alliumRows];
 
+    // Use overview endpoints for accurate GBP/EUR totals (fixes data mismatch)
     const totals: Record<string, number> = { GBP: 0, USD: 0, EUR: 0 };
+    if (gbpOverview?.data?.[0]) totals.GBP = gbpOverview.data[0].total_supply_usd;
+    if (eurOverview?.data?.[0]) totals.EUR = eurOverview.data[0].total_supply_usd;
+    // USD total still comes from market share query (no separate USD overview)
     for (const row of allRows) {
-      if (row.currency_group && totals[row.currency_group] !== undefined) {
-        totals[row.currency_group] += row.total_supply_usd ?? 0;
+      if (row.currency_group === "USD") {
+        totals.USD += row.total_supply_usd ?? 0;
       }
     }
 
@@ -117,7 +139,7 @@ export default function MarketShareComparison() {
     const share = total === 0 ? 0 : (totals.GBP / total) * 100;
 
     return { rows: allRows, grouped: totals, gbpShare: share };
-  }, [data, solanaData]);
+  }, [data, solanaData, gbpOverview, eurOverview]);
 
   const [showTooltip, setShowTooltip] = useState(false);
 

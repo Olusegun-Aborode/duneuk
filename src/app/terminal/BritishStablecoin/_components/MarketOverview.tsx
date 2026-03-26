@@ -95,21 +95,12 @@ export default function MarketOverview() {
     );
   }
 
-  // Build native supply display
-  const formatNativeSupply = () => {
-    if (currency === "GBP" && gbpOverview) return formatGBP(gbpOverview.total_supply_gbp);
-    if (currency === "EUR" && eurOverview) return formatEUR(eurOverview.total_supply_gbp); // normalized from _eur
-    if (currency === "ALL" && gbpOverview && eurOverview) {
-      return `${formatGBP(gbpOverview.total_supply_gbp)} + ${formatEUR(eurOverview.total_supply_gbp)}`;
-    }
-    return null;
-  };
-
-  const totalUsd = () => {
+  // Build supply displays
+  const totalUsdValue = () => {
     let total = 0;
     if (showGbp && gbpOverview) total += gbpOverview.total_supply_usd;
     if (showEur && eurOverview) total += eurOverview.total_supply_usd;
-    return total > 0 ? formatUSD(total) : null;
+    return total;
   };
 
   const totalTokensChains = () => {
@@ -119,22 +110,52 @@ export default function MarketOverview() {
     return tokens > 0 ? `${tokens} / ${chains}` : null;
   };
 
-  const nativeLabel = currency === "ALL" ? "Total Supply (Native)" : `Total Supply (${currency})`;
-
-  const counters = [
+  // In ALL mode: show combined USD as primary, with GBP+EUR breakdown below
+  // In single currency mode: show native supply as primary, USD as secondary
+  const counters = currency === "ALL" ? [
     {
-      label: nativeLabel,
-      value: formatNativeSupply(),
+      label: "Total Supply (USD)",
+      value: totalUsdValue() > 0 ? formatUSD(totalUsdValue()) : null,
+      accent: true,
+      sub: gbpOverview && eurOverview
+        ? `${formatGBP(gbpOverview.total_supply_gbp)} GBP + ${formatEUR(eurOverview.total_supply_gbp)} EUR`
+        : undefined,
+    },
+    {
+      label: "GBP Supply",
+      value: gbpOverview ? formatGBP(gbpOverview.total_supply_gbp) : null,
+      accent: false,
+      sub: gbpOverview ? formatUSD(gbpOverview.total_supply_usd) : undefined,
+    },
+    {
+      label: "EUR Supply",
+      value: eurOverview ? formatEUR(eurOverview.total_supply_gbp) : null,
+      accent: false,
+      sub: eurOverview ? formatUSD(eurOverview.total_supply_usd) : undefined,
+    },
+    {
+      label: "Tokens / Chains",
+      value: totalTokensChains(),
+      accent: false,
+    },
+  ] : [
+    {
+      label: `Total Supply (${currency})`,
+      value: currency === "GBP" && gbpOverview
+        ? formatGBP(gbpOverview.total_supply_gbp)
+        : currency === "EUR" && eurOverview
+          ? formatEUR(eurOverview.total_supply_gbp)
+          : null,
       accent: true,
     },
     {
       label: "Total Supply (USD)",
-      value: totalUsd(),
+      value: totalUsdValue() > 0 ? formatUSD(totalUsdValue()) : null,
       accent: false,
     },
     {
-      label: currency === "EUR" ? "EUR/USD Rate" : "GBP/USD Rate",
-      value: gbpUsdRate !== null ? `$${gbpUsdRate.toFixed(4)}` : "—",
+      label: `${currency}/USD Rate`,
+      value: gbpUsdRate !== null ? `$${gbpUsdRate.toFixed(4)}` : "\u2014",
       accent: false,
       sub: gbpUsdRate !== null ? (isLiveRate ? "[ECB]" : "[cached]") : undefined,
     },

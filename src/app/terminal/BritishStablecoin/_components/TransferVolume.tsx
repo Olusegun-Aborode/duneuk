@@ -1,12 +1,22 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import { formatNative, formatNumber } from "@/lib/format";
-import { TOKEN_META } from "@/lib/constants";
+import { TOKEN_META, CHART_COLORS } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { TransferVolumeEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import ChartWatermark from "./ChartWatermark";
 
 function SkeletonRow() {
   return (
@@ -20,10 +30,20 @@ function SkeletonRow() {
   );
 }
 
+interface ChainRow {
+  blockchain: string;
+  total_volume: number;
+  num_transfers: number;
+  unique_senders: number;
+  unique_receivers: number;
+  [token: string]: string | number;
+}
+
 export default function TransferVolume() {
   const { currency } = useCurrencyFilter();
   const showGbp = currency === "GBP" || currency === "ALL";
   const showEur = currency === "EUR" || currency === "ALL";
+  const [showTable, setShowTable] = useState(false);
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<TransferVolumeEntry>
@@ -64,6 +84,34 @@ export default function TransferVolume() {
     return { data: all.filter((r) => tokenMatchesCurrency(r.token, currency)) };
   }, [gbpData, eurData, currency, showGbp, showEur]);
 
+  const { chartData, tokens } = useMemo(() => {
+    if (!data.data?.length) return { chartData: [], tokens: [] };
+    const byChain: Record<string, ChainRow> = {};
+    const tokenSet = new Set<string>();
+    for (const entry of data.data) {
+      tokenSet.add(entry.token);
+      if (!byChain[entry.blockchain]) {
+        byChain[entry.blockchain] = {
+          blockchain: entry.blockchain,
+          total_volume: 0,
+          num_transfers: 0,
+          unique_senders: 0,
+          unique_receivers: 0,
+        };
+      }
+      const row = byChain[entry.blockchain];
+      row[entry.token] = ((row[entry.token] as number) || 0) + entry.volume_gbp;
+      row.total_volume += entry.volume_gbp;
+      row.num_transfers += entry.num_transfers;
+      row.unique_senders += entry.unique_senders;
+      row.unique_receivers += entry.unique_receivers;
+    }
+    const sorted = Object.values(byChain).sort(
+      (a, b) => b.total_volume - a.total_volume
+    );
+    return { chartData: sorted, tokens: [...tokenSet] };
+  }, [data]);
+
   if (error) {
     return (
       <div className="tui-panel">
@@ -82,57 +130,166 @@ export default function TransferVolume() {
     <div className="tui-panel overflow-x-auto">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Transfer Volume <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">Last 30 days</span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowTable((v) => !v)}
+            className="text-[9px] px-1.5 py-0.5 rounded border border-white/10 hover:border-white/20 text-[#6B7280] hover:text-[#E0E0E0] transition-colors"
+          >
+            {showTable ? "Hide table" : "View table"}
+          </button>
+          <span className="tui-panel-badge">Last 30 days</span>
+        </div>
       </div>
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Chain</th>
-            <th>Token</th>
-            <th className="text-right">Transfers</th>
-            <th className="text-right">Volume ({currency === "ALL" ? "Native" : currency})</th>
-            <th className="text-right">Senders</th>
-            <th className="text-right">Receivers</th>
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading
-            ? Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonRow key={i} />
-              ))
-            : data?.data?.map((entry, idx) => {
-                const meta = TOKEN_META[entry.token];
-                return (
-                  <tr key={`${entry.blockchain}-${entry.token}-${idx}`}>
-                    <td className="capitalize">{entry.blockchain}</td>
-                    <td>
-                      <span className="flex items-center">
-                        <TokenLogo symbol={entry.token} size={16} />
-                        <span
-                          className="font-bold"
-                          style={{ color: meta?.color ?? "#E0E0E0" }}
-                        >
-                          {entry.token}
-                        </span>
+
+      <div className="p-4">
+        {/* Token legend */}
+        <div className="flex flex-wrap gap-3 mb-3">
+          {tokens.map((token) => (
+            <span key={token} className="flex items-center text-[10px] text-[#6B7280]">
+              <TokenLogo symbol={token} size={12} />
+              {token}
+            </span>
+          ))}
+        </div>
+
+        {isLoading ? (
+          <div className="h-64 w-full skeleton" />
+        ) : (
+          <div className="relative">
+            <ChartWatermark />
+            <ResponsiveContainer
+              width="100%"
+              height={Math.max(chartData.length * 45, 200)}
+            >
+              <BarChart layout="vertical" data={chartData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.04)"
+                  horizontal={false}
+                />
+                <XAxis
+                  type="number"
+                  tickFormatter={(v: number) => formatNative(v, currency)}
+                  tick={{ fill: "#6B7280", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="blockchain"
+                  tick={{ fill: "#6B7280", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={90}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#111318",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "4px",
+                    fontSize: 11,
+                    fontFamily: "monospace",
+                  }}
+                  labelStyle={{ color: "#6B7280", textTransform: "capitalize" }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    const row = payload[0]?.payload as ChainRow | undefined;
+                    if (!row) return null;
+                    return (
+                      <div
+                        style={{
+                          backgroundColor: "#111318",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: "4px",
+                          padding: "8px 10px",
+                          fontSize: 11,
+                          fontFamily: "monospace",
+                        }}
+                      >
+                        <div style={{ color: "#E0E0E0", fontWeight: 600, marginBottom: 4, textTransform: "capitalize" }}>
+                          {label}
+                        </div>
+                        <div style={{ color: "#6B7280" }}>
+                          Volume: <span style={{ color: "#E0E0E0" }}>{formatNative(row.total_volume, currency)}</span>
+                        </div>
+                        <div style={{ color: "#6B7280" }}>
+                          Transfers: <span style={{ color: "#E0E0E0" }}>{formatNumber(row.num_transfers)}</span>
+                        </div>
+                        <div style={{ color: "#6B7280" }}>
+                          Senders: <span style={{ color: "#E0E0E0" }}>{formatNumber(row.unique_senders)}</span>
+                        </div>
+                        <div style={{ color: "#6B7280" }}>
+                          Receivers: <span style={{ color: "#E0E0E0" }}>{formatNumber(row.unique_receivers)}</span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                {tokens.map((token) => (
+                  <Bar
+                    key={token}
+                    dataKey={token}
+                    stackId="1"
+                    fill={
+                      CHART_COLORS[token as keyof typeof CHART_COLORS] ??
+                      "#E0E0E0"
+                    }
+                    fillOpacity={0.85}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {showTable && !isLoading && (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Chain</th>
+              <th>Token</th>
+              <th className="text-right">Transfers</th>
+              <th className="text-right">Volume ({currency === "ALL" ? "Native" : currency})</th>
+              <th className="text-right">Senders</th>
+              <th className="text-right">Receivers</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data?.data?.map((entry, idx) => {
+              const meta = TOKEN_META[entry.token];
+              return (
+                <tr key={`${entry.blockchain}-${entry.token}-${idx}`}>
+                  <td className="capitalize">{entry.blockchain}</td>
+                  <td>
+                    <span className="flex items-center">
+                      <TokenLogo symbol={entry.token} size={16} />
+                      <span
+                        className="font-bold"
+                        style={{ color: meta?.color ?? "#E0E0E0" }}
+                      >
+                        {entry.token}
                       </span>
-                    </td>
-                    <td className="text-right">
-                      {formatNumber(entry.num_transfers)}
-                    </td>
-                    <td className="text-right font-bold">
-                      {formatNative(entry.volume_gbp, currency)}
-                    </td>
-                    <td className="text-right text-[#6B7280]">
-                      {formatNumber(entry.unique_senders)}
-                    </td>
-                    <td className="text-right text-[#6B7280]">
-                      {formatNumber(entry.unique_receivers)}
-                    </td>
-                  </tr>
-                );
-              })}
-        </tbody>
-      </table>
+                    </span>
+                  </td>
+                  <td className="text-right">
+                    {formatNumber(entry.num_transfers)}
+                  </td>
+                  <td className="text-right font-bold">
+                    {formatNative(entry.volume_gbp, currency)}
+                  </td>
+                  <td className="text-right text-[#6B7280]">
+                    {formatNumber(entry.unique_senders)}
+                  </td>
+                  <td className="text-right text-[#6B7280]">
+                    {formatNumber(entry.unique_receivers)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

@@ -32,17 +32,14 @@ type TabId = (typeof TABS)[number]["id"];
 const SECTIONS: Record<TabId, { id: string; label: string }[]> = {
   overview: [
     { id: "leaderboard", label: "Leaderboard" },
-    { id: "market-share", label: "Market Share" },
     { id: "supply-dau", label: "Supply & DAU" },
-    { id: "transfers", label: "Transfers" },
+    { id: "transfers", label: "Transfers & Market Share" },
     { id: "holdings", label: "Holdings" },
   ],
   utilisation: [
     { id: "dex-volume", label: "DEX Volume" },
-    { id: "dex-platforms", label: "Platforms" },
-    { id: "lp-pools", label: "LP Pools" },
-    { id: "lending", label: "Lending" },
-    { id: "cex", label: "CEX" },
+    { id: "dex-platforms", label: "Platforms & Lending" },
+    { id: "lp-pools", label: "Yield & CEX" },
   ],
   methodology: [],
 };
@@ -88,17 +85,17 @@ function OverviewTab() {
       <SectionDivider id="leaderboard" label="Leaderboard" />
       <SupplyLeaderboard />
 
-      <SectionDivider id="market-share" label="Market Context" />
-      <MarketShareComparison />
-
       <SectionDivider id="supply-dau" label="Supply & Activity" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <SupplyChart />
         <DailyActiveUsers />
       </div>
 
-      <SectionDivider id="transfers" label="Transfer Volume" />
-      <TransferVolume />
+      <SectionDivider id="transfers" label="Transfer Volume & Market Share" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <TransferVolume />
+        <MarketShareComparison />
+      </div>
 
       <SectionDivider id="holdings" label="Holdings" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -117,17 +114,17 @@ function UtilisationTab() {
       <SectionDivider id="dex-volume" label="DEX Volume" />
       <DexVolume />
 
-      <SectionDivider id="dex-platforms" label="DEX Platforms" />
-      <DexPlatforms />
+      <SectionDivider id="dex-platforms" label="DEX Platforms & Lending" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <DexPlatforms />
+        <LendingUtilization />
+      </div>
 
-      <SectionDivider id="lp-pools" label="Liquidity Pools" />
-      <YieldOpportunities />
-
-      <SectionDivider id="lending" label="Lending & Borrowing" />
-      <LendingUtilization />
-
-      <SectionDivider id="cex" label="CEX Listings" />
-      <CexListings />
+      <SectionDivider id="lp-pools" label="Yield & CEX Listings" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <YieldOpportunities />
+        <CexListings />
+      </div>
     </div>
   );
 }
