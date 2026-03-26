@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { formatGBP, formatUSD, formatNumber, timeAgo } from "@/lib/format";
+import { formatGBP, formatEUR, formatUSD, formatNumber, timeAgo } from "@/lib/format";
+import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
 import type {
   MarketOverview as MarketOverviewType,
   DuneApiResponse,
@@ -17,15 +18,32 @@ function CounterSkeleton() {
 }
 
 export default function MarketOverview() {
-  const { data, isLoading, error } = useQuery<
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<MarketOverviewType>
   >({
-    queryKey: ["market-overview"],
+    queryKey: ["market-overview-gbp"],
     queryFn: async () => {
       const res = await fetch("/api/terminal/british-stablecoin/overview");
-      if (!res.ok) throw new Error("Failed to fetch market overview");
+      if (!res.ok) throw new Error("Failed to fetch GBP overview");
       return res.json();
     },
+    enabled: showGbp,
+  });
+
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<MarketOverviewType>
+  >({
+    queryKey: ["market-overview-eur"],
+    queryFn: async () => {
+      const res = await fetch("/api/terminal/euro-stablecoin/overview");
+      if (!res.ok) throw new Error("Failed to fetch EUR overview");
+      return res.json();
+    },
+    enabled: showEur,
   });
 
   // Live GBP/USD rate + token prices
@@ -41,7 +59,11 @@ export default function MarketOverview() {
     },
   });
 
-  const overview = data?.data?.[0];
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+  const gbpOverview = gbpData?.data?.[0];
+  const eurOverview = eurData?.data?.[0];
+  const lastUpdated = gbpData?.lastUpdated || eurData?.lastUpdated;
 
   // Persist last live rate to localStorage so we never show a stale hardcoded value
   const GBP_USD_STORAGE_KEY = "duneuk_gbp_usd_rate";
@@ -73,28 +95,52 @@ export default function MarketOverview() {
     );
   }
 
+  // Build native supply display
+  const formatNativeSupply = () => {
+    if (currency === "GBP" && gbpOverview) return formatGBP(gbpOverview.total_supply_gbp);
+    if (currency === "EUR" && eurOverview) return formatEUR(eurOverview.total_supply_gbp); // normalized from _eur
+    if (currency === "ALL" && gbpOverview && eurOverview) {
+      return `${formatGBP(gbpOverview.total_supply_gbp)} + ${formatEUR(eurOverview.total_supply_gbp)}`;
+    }
+    return null;
+  };
+
+  const totalUsd = () => {
+    let total = 0;
+    if (showGbp && gbpOverview) total += gbpOverview.total_supply_usd;
+    if (showEur && eurOverview) total += eurOverview.total_supply_usd;
+    return total > 0 ? formatUSD(total) : null;
+  };
+
+  const totalTokensChains = () => {
+    let tokens = 0, chains = 0;
+    if (showGbp && gbpOverview) { tokens += gbpOverview.num_tokens; chains += gbpOverview.total_chain_deployments; }
+    if (showEur && eurOverview) { tokens += eurOverview.num_tokens; chains += eurOverview.total_chain_deployments; }
+    return tokens > 0 ? `${tokens} / ${chains}` : null;
+  };
+
+  const nativeLabel = currency === "ALL" ? "Total Supply (Native)" : `Total Supply (${currency})`;
+
   const counters = [
     {
-      label: "Total Supply (GBP)",
-      value: overview ? formatGBP(overview.total_supply_gbp) : null,
+      label: nativeLabel,
+      value: formatNativeSupply(),
       accent: true,
     },
     {
       label: "Total Supply (USD)",
-      value: overview ? formatUSD(overview.total_supply_usd) : null,
+      value: totalUsd(),
       accent: false,
     },
     {
-      label: "GBP/USD Rate",
+      label: currency === "EUR" ? "EUR/USD Rate" : "GBP/USD Rate",
       value: gbpUsdRate !== null ? `$${gbpUsdRate.toFixed(4)}` : "—",
       accent: false,
       sub: gbpUsdRate !== null ? (isLiveRate ? "[ECB]" : "[cached]") : undefined,
     },
     {
       label: "Tokens / Chains",
-      value: overview
-        ? `${overview.num_tokens} / ${overview.total_chain_deployments}`
-        : null,
+      value: totalTokensChains(),
       accent: false,
     },
   ];
@@ -104,9 +150,9 @@ export default function MarketOverview() {
       <div className="tui-panel-header">
         <span className="tui-panel-title">Market Overview</span>
         <div className="flex items-center gap-3">
-          {data?.lastUpdated && (
+          {lastUpdated && (
             <span className="tui-panel-badge">
-              Updated {timeAgo(new Date(data.lastUpdated))}
+              Updated {timeAgo(new Date(lastUpdated))}
             </span>
           )}
           <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: "var(--text-muted)" }}>

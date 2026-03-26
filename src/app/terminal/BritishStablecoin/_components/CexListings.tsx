@@ -1,6 +1,7 @@
 "use client";
 
 import { TOKEN_META } from "@/lib/constants";
+import { TokenLogo } from "@/components/TokenLogo";
 
 interface CexListing {
   token: string;
@@ -53,10 +54,7 @@ export default function CexListings() {
               <tr key={`${row.token}-${row.exchange}-${i}`}>
                 <td>
                   <span className="flex items-center">
-                    <span
-                      className="token-dot"
-                      style={{ backgroundColor: meta?.color ?? "#E0E0E0" }}
-                    />
+                    <TokenLogo symbol={row.token} size={16} />
                     <span className="font-bold" style={{ color: meta?.color ?? "#E0E0E0" }}>
                       {row.token}
                     </span>

@@ -1,9 +1,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { formatCompactUSD, formatNumber } from "@/lib/format";
 import { TOKEN_META, DEX_COLORS } from "@/lib/constants";
+import { DexLogo } from "@/components/DexLogo";
+import { TokenLogo } from "@/components/TokenLogo";
 import type { DexPoolEntry, DuneApiResponse } from "@/lib/types";
+import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
 
 function SkeletonRow() {
   return (
@@ -18,7 +22,11 @@ function SkeletonRow() {
 }
 
 export default function YieldOpportunities() {
-  const { data, isLoading, error } = useQuery<
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<DexPoolEntry>
   >({
     queryKey: ["dex-pools"],
@@ -29,7 +37,33 @@ export default function YieldOpportunities() {
       if (!res.ok) throw new Error("Failed to fetch DEX pools");
       return res.json();
     },
+    enabled: showGbp,
   });
+
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<DexPoolEntry>
+  >({
+    queryKey: ["dex-pools-eur"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/terminal/euro-stablecoin/dex-pools"
+      );
+      if (!res.ok) throw new Error("Failed to fetch EUR DEX pools");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+
+  const data = useMemo(() => {
+    const all: DexPoolEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    return { data: all.filter((r) => tokenMatchesCurrency(r.gbp_token, currency)) };
+  }, [gbpData, eurData, currency, showGbp, showEur]);
 
   if (error) {
     return (
@@ -73,10 +107,7 @@ export default function YieldOpportunities() {
                   <tr key={`${entry.dex}-${entry.gbp_token}-${entry.pair_token}-${idx}`}>
                     <td>
                       <span className="flex items-center">
-                        <span
-                          className="token-dot"
-                          style={{ backgroundColor: dexColor }}
-                        />
+                        <DexLogo name={entry.dex} size={16} />
                         <span className="capitalize font-bold">
                           {entry.dex}
                         </span>
@@ -84,14 +115,17 @@ export default function YieldOpportunities() {
                     </td>
                     <td className="capitalize">{entry.blockchain}</td>
                     <td>
-                      <span
-                        className="font-bold"
-                        style={{ color: gbpMeta?.color ?? "#E0E0E0" }}
-                      >
-                        {entry.gbp_token}
+                      <span className="inline-flex items-center">
+                        <TokenLogo symbol={entry.gbp_token} size={14} />
+                        <span
+                          className="font-bold"
+                          style={{ color: gbpMeta?.color ?? "#E0E0E0" }}
+                        >
+                          {entry.gbp_token}
+                        </span>
+                        <span className="text-[#6B7280]"> / </span>
+                        <span className="text-white">{entry.pair_token}</span>
                       </span>
-                      <span className="text-[#6B7280]"> / </span>
-                      <span className="text-white">{entry.pair_token}</span>
                     </td>
                     <td className="text-right font-bold">
                       {formatCompactUSD(entry.volume_usd_30d)}

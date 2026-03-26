@@ -5,6 +5,21 @@ export function formatGBP(value: number | null | undefined): string {
   return `£${v.toFixed(2)}`;
 }
 
+export function formatEUR(value: number | null | undefined): string {
+  const v = value ?? 0;
+  if (v >= 1_000_000) return `€${(v / 1_000_000).toFixed(2)}M`;
+  if (v >= 1_000) return `€${(v / 1_000).toFixed(1)}K`;
+  return `€${v.toFixed(2)}`;
+}
+
+export type CurrencyFormat = "GBP" | "EUR" | "ALL";
+
+export function formatNative(value: number | null | undefined, currency: CurrencyFormat): string {
+  if (currency === "EUR") return formatEUR(value);
+  if (currency === "ALL") return formatUSD(value);
+  return formatGBP(value);
+}
+
 export function formatUSD(value: number | null | undefined): string {
   const v = value ?? 0;
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;

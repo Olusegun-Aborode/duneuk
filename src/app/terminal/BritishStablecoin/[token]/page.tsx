@@ -11,6 +11,8 @@ import {
   BarChart, Bar,
 } from "recharts";
 import { TOKEN_META, DEX_COLORS } from "@/lib/constants";
+import { TokenLogo } from "@/components/TokenLogo";
+import { DexLogo } from "@/components/DexLogo";
 import {
   formatGBP, formatNumber, formatPercent, formatCompactUSD,
   formatAddress, formatUSD,
@@ -256,7 +258,7 @@ export default function TokenDetailPage() {
           <Link href="/terminal/BritishStablecoin" className="text-xs" style={{ color: "var(--accent-green)" }}>
             &larr; Back
           </Link>
-          <span className="token-dot" style={{ backgroundColor: color, width: 14, height: 14 }} />
+          <TokenLogo symbol={token} size={24} />
           <div>
             <h1 className="text-lg font-bold" style={{ color }}>{token}</h1>
             <p className="text-[11px]" style={{ color: "var(--text-muted)" }}>
@@ -482,7 +484,7 @@ export default function TokenDetailPage() {
             <div className="flex flex-wrap gap-3 mb-3">
               {dexNames.map((dex) => (
                 <span key={dex} className="flex items-center text-[10px]" style={{ color: "var(--text-muted)" }}>
-                  <span className="token-dot" style={{ backgroundColor: DEX_COLORS[dex] ?? "#6B7280" }} />
+                  <DexLogo name={dex} size={12} />
                   <span className="capitalize">{dex}</span>
                 </span>
               ))}

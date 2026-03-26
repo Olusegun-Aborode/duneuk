@@ -4,7 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { formatCompactUSD } from "@/lib/format";
 import { CHART_COLORS } from "@/lib/constants";
+import { TokenLogo } from "@/components/TokenLogo";
 import type { MarketShareEntry, DuneApiResponse } from "@/lib/types";
+import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
 
 const GROUP_COLORS: Record<string, string> = {
   GBP: "#00FF88",
@@ -23,7 +25,11 @@ interface AlliumToken {
 }
 
 export default function MarketShareComparison() {
-  const { data, isLoading, error } = useQuery<
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<MarketShareEntry>
   >({
     queryKey: ["market-share"],
@@ -34,7 +40,42 @@ export default function MarketShareComparison() {
       if (!res.ok) throw new Error("Failed to fetch market share");
       return res.json();
     },
+    enabled: showGbp,
   });
+
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<MarketShareEntry>
+  >({
+    queryKey: ["market-share-eur"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/terminal/euro-stablecoin/market-share"
+      );
+      if (!res.ok) throw new Error("Failed to fetch EUR market share");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+
+  const data = useMemo(() => {
+    const all: MarketShareEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    // Deduplicate by symbol (both endpoints may return USD tokens)
+    const seen = new Set<string>();
+    const deduped: MarketShareEntry[] = [];
+    for (const entry of all) {
+      if (!seen.has(entry.symbol)) {
+        seen.add(entry.symbol);
+        deduped.push(entry);
+      }
+    }
+    return { data: deduped };
+  }, [gbpData, eurData, showGbp, showEur]);
 
   // Fetch Solana GBP token data from Allium
   const { data: solanaData } = useQuery<{
@@ -111,10 +152,11 @@ export default function MarketShareComparison() {
       <div className="tui-panel-header">
         <div className="flex items-center gap-2">
           <span className="tui-panel-title">Stablecoin Market Share</span>
-          <div className="relative inline-block">
+          <div className="relative inline-block"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
             <button
-              onMouseEnter={() => setShowTooltip(true)}
-              onMouseLeave={() => setShowTooltip(false)}
               onClick={() => setShowTooltip((v) => !v)}
               className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold cursor-pointer"
               style={{ color: "var(--text-muted)", border: "1px solid var(--border)" }}
@@ -124,14 +166,22 @@ export default function MarketShareComparison() {
             </button>
             {showTooltip && (
               <div
-                className="absolute z-50 w-72 p-3 rounded text-[11px] leading-relaxed"
+                className="fixed z-[9999] w-72 p-3 rounded text-[11px] leading-relaxed"
                 style={{
-                  top: "calc(100% + 6px)",
-                  right: 0,
                   background: "var(--card)",
                   border: "1px solid var(--border)",
                   color: "var(--text-muted)",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                }}
+                ref={(el) => {
+                  if (el) {
+                    const btn = el.previousElementSibling as HTMLElement;
+                    if (btn) {
+                      const rect = btn.getBoundingClientRect();
+                      el.style.top = `${rect.bottom + 6}px`;
+                      el.style.left = `${rect.left}px`;
+                    }
+                  }
                 }}
               >
                 <span style={{ color: "var(--accent-green)" }} className="font-bold">GBP stablecoins</span> represent{" "}
@@ -210,10 +260,7 @@ export default function MarketShareComparison() {
                       </td>
                       <td>
                         <span className="flex items-center">
-                          <span
-                            className="token-dot"
-                            style={{ backgroundColor: tokenColor }}
-                          />
+                          <TokenLogo symbol={entry.symbol} size={16} />
                           <span className="font-bold" style={{ color: tokenColor }}>
                             {entry.symbol}
                           </span>

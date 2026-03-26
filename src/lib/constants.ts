@@ -13,16 +13,84 @@ export const QUERY_IDS = {
   DEX_POOLS: 6843570,
 } as const;
 
+// EUR query IDs — placeholder until Dune queries are created via MCP
+export const EURO_QUERY_IDS = {
+  MARKET_OVERVIEW: 0,
+  SUPPLY_LEADERBOARD: 0,
+  SUPPLY_OVER_TIME: 0,
+  TRANSFER_VOLUME: 0,
+  DAILY_ACTIVE_USERS: 0,
+  CHAIN_DISTRIBUTION: 0,
+  TOP_HOLDERS: 0,
+  DEX_VOLUME: 0,
+  DEX_PLATFORMS: 0,
+  MARKET_SHARE: 0,
+  LENDING: 0,
+  DEX_POOLS: 0,
+} as const;
+
 export const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 
-export const CHART_COLORS = {
+export const CHART_COLORS: Record<string, string> = {
   tGBP: "#00FF88",
   GBPm: "#5B7FFF",
   GBPe: "#FF6B35",
   GBPT: "#B44AFF",
   VGBP: "#00D4FF",
   eGBP: "#FFD700",
-} as const;
+  EURC: "#2775CA",
+  EURT: "#50AF95",
+  EURS: "#2E86C1",
+  EURA: "#FF6B6B",
+  EURe: "#FF8C00",
+  EURCV: "#8E44AD",
+  EURI: "#1ABC9C",
+  EUROe: "#3498DB",
+  EURQ: "#E74C3C",
+  EUROP: "#F39C12",
+  EURR: "#27AE60",
+  EURAU: "#9B59B6",
+  PAR: "#2C3E50",
+  sEUR: "#7D3C98",
+  EURL: "#D4AC0D",
+};
+
+export const TOKEN_LOGOS: Record<string, string> = {
+  tGBP: "/tokens/tGBP.png",
+  GBPm: "/tokens/GBPm.png",
+  GBPe: "/tokens/GBPe.png",
+  GBPT: "/tokens/GBPT.png",
+  VGBP: "/tokens/VGBP.png",
+  eGBP: "/tokens/eGBP.png",
+  USDT: "/tokens/USDT.png",
+  USDC: "/tokens/USDC.png",
+  EURC: "/tokens/EURC.png",
+  EURT: "/tokens/EURT.png",
+};
+
+export const CHAIN_LOGOS: Record<string, string> = {
+  ethereum: "/tokens/chain-ethereum.png",
+  base: "/tokens/chain-base.png",
+  polygon: "/tokens/chain-polygon.png",
+  celo: "/tokens/chain-celo.png",
+  gnosis: "/tokens/chain-gnosis.png",
+  bnb: "/tokens/chain-bnb.png",
+  arbitrum: "/tokens/chain-arbitrum.png",
+  optimism: "/tokens/chain-optimism.png",
+  avalanche_c: "/tokens/chain-avalanche_c.png",
+  solana: "/tokens/chain-solana.png",
+};
+
+export const DEX_LOGOS: Record<string, string> = {
+  uniswap: "/tokens/uniswap.png",
+  curve: "/tokens/curve.png",
+  mento: "/tokens/mento.png",
+  balancer: "/tokens/balancer.png",
+  sushiswap: "/tokens/sushiswap.png",
+  pancakeswap: "/tokens/pancakeswap.png",
+  aerodrome: "/tokens/aerodrome.png",
+  velodrome: "/tokens/velodrome.png",
+};
 
 export const DEX_COLORS: Record<string, string> = {
   uniswap: "#FF007A",
@@ -92,5 +160,61 @@ export const TOKEN_META: Record<string, TokenMeta> = {
     backing: "Short-term government bonds",
     cex: ["Mercado Bitcoin"],
     description: "Part of Aryze's multi-currency suite (eUSD, eEUR, eGBP). Cross-currency conversion built in.",
+  },
+  EURC: {
+    issuer: "Circle",
+    color: CHART_COLORS.EURC,
+    regulation: "MiCA-compliant (France AMF)",
+    backing: "1:1 EUR reserves held by regulated EU financial institutions",
+    cex: ["Coinbase", "Binance", "Kraken", "Bitstamp"],
+    description: "Circle's euro-denominated stablecoin. Native CCTP cross-chain transfers. Largest EUR stablecoin by market cap.",
+  },
+  EURT: {
+    issuer: "Tether",
+    color: CHART_COLORS.EURT,
+    regulation: "Limited (no MiCA licence)",
+    backing: "Tether reserves (cash equivalents, commercial paper)",
+    cex: ["Bitfinex", "Kraken"],
+    description: "Tether's euro stablecoin. Discontinued Nov 2025 due to MiCA requirements. Historical data only.",
+  },
+  EURS: {
+    issuer: "Stasis",
+    color: CHART_COLORS.EURS,
+    regulation: "Malta (MFSA)",
+    backing: "1:1 EUR reserves in EU bank accounts",
+    cex: ["Bitfinex", "HitBTC"],
+    description: "One of the earliest EUR stablecoins. Fiat-backed with regular audits by BDO.",
+  },
+  EURA: {
+    issuer: "Angle Protocol",
+    color: CHART_COLORS.EURA,
+    regulation: "Decentralised governance",
+    backing: "Crypto-collateralised (overcollateralised vaults)",
+    cex: [],
+    description: "Formerly agEUR. Decentralised EUR stablecoin backed by crypto collateral. Active on Ethereum, Polygon, and other chains.",
+  },
+  EURe: {
+    issuer: "Monerium",
+    color: CHART_COLORS.EURe,
+    regulation: "Central Bank of Iceland (MiCAR-compliant)",
+    backing: "E-money — 1:1 EUR reserves",
+    cex: [],
+    description: "Authorised e-money EUR token. Integrated with Gnosis Pay for real-world card spending.",
+  },
+  EURCV: {
+    issuer: "SG-Forge (Société Générale)",
+    color: CHART_COLORS.EURCV,
+    regulation: "AMF France (MiCA-compliant)",
+    backing: "Fiat reserves backed by Société Générale",
+    cex: ["Bitstamp"],
+    description: "Institutional-grade EUR stablecoin from Société Générale's digital asset subsidiary.",
+  },
+  EURI: {
+    issuer: "Banking Circle",
+    color: CHART_COLORS.EURI,
+    regulation: "Luxembourg (CRR credit institution)",
+    backing: "1:1 EUR reserves in Banking Circle accounts",
+    cex: [],
+    description: "MiCA-compliant EUR e-money token from Banking Circle, a licensed credit institution.",
   },
 };

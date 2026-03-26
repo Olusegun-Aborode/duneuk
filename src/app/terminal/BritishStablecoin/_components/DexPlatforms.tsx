@@ -1,9 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { formatCompactUSD, formatNumber } from "@/lib/format";
 import { DEX_COLORS } from "@/lib/constants";
+import { DexLogo } from "@/components/DexLogo";
 import type { DexPlatformEntry, DuneApiResponse } from "@/lib/types";
+import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
 
 function SkeletonRow() {
   return (
@@ -18,7 +21,11 @@ function SkeletonRow() {
 }
 
 export default function DexPlatforms() {
-  const { data, isLoading, error } = useQuery<
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<DexPlatformEntry>
   >({
     queryKey: ["dex-platforms"],
@@ -29,9 +36,50 @@ export default function DexPlatforms() {
       if (!res.ok) throw new Error("Failed to fetch DEX platforms");
       return res.json();
     },
+    enabled: showGbp,
   });
 
-  const totalVolume = data?.data?.reduce((sum, d) => sum + (d.volume_usd ?? 0), 0) ?? 0;
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<DexPlatformEntry>
+  >({
+    queryKey: ["dex-platforms-eur"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/terminal/euro-stablecoin/dex-platforms"
+      );
+      if (!res.ok) throw new Error("Failed to fetch EUR DEX platforms");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+
+  const merged = useMemo(() => {
+    const all: DexPlatformEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    // Aggregate by dex name since both endpoints may have same DEX
+    const byDex: Record<string, DexPlatformEntry> = {};
+    for (const entry of all) {
+      if (byDex[entry.dex]) {
+        byDex[entry.dex] = {
+          ...byDex[entry.dex],
+          volume_usd: (byDex[entry.dex].volume_usd ?? 0) + (entry.volume_usd ?? 0),
+          trade_count: (byDex[entry.dex].trade_count ?? 0) + (entry.trade_count ?? 0),
+          unique_traders: (byDex[entry.dex].unique_traders ?? 0) + (entry.unique_traders ?? 0),
+        };
+      } else {
+        byDex[entry.dex] = { ...entry };
+      }
+    }
+    return Object.values(byDex).sort((a, b) => (b.volume_usd ?? 0) - (a.volume_usd ?? 0));
+  }, [gbpData, eurData, showGbp, showEur]);
+
+  const data = { data: merged };
+  const totalVolume = merged.reduce((sum, d) => sum + (d.volume_usd ?? 0), 0);
 
   if (error) {
     return (
@@ -77,10 +125,7 @@ export default function DexPlatforms() {
                   <tr key={`${entry.dex}-${idx}`}>
                     <td>
                       <span className="flex items-center">
-                        <span
-                          className="token-dot"
-                          style={{ backgroundColor: color }}
-                        />
+                        <DexLogo name={entry.dex} size={16} />
                         <span className="font-bold capitalize">
                           {entry.dex}
                         </span>

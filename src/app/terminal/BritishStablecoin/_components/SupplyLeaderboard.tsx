@@ -2,8 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { formatGBP, formatUSD, formatPercent, formatNumber } from "@/lib/format";
+import { formatGBP, formatEUR, formatUSD, formatPercent, formatNumber, formatNative } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
+import { TokenLogo } from "@/components/TokenLogo";
+import { useCurrencyFilter, type CurrencyFilter } from "@/contexts/CurrencyFilterContext";
 import type { LeaderboardEntry, DuneApiResponse } from "@/lib/types";
 
 function SkeletonRow() {
@@ -18,17 +20,50 @@ function SkeletonRow() {
   );
 }
 
-export default function SupplyLeaderboard() {
-  const { data, isLoading, error } = useQuery<
-    DuneApiResponse<LeaderboardEntry>
-  >({
-    queryKey: ["supply-leaderboard"],
+function useLeaderboardData(currency: CurrencyFilter) {
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+
+  const gbp = useQuery<DuneApiResponse<LeaderboardEntry>>({
+    queryKey: ["supply-leaderboard-gbp"],
     queryFn: async () => {
       const res = await fetch("/api/terminal/british-stablecoin/leaderboard");
-      if (!res.ok) throw new Error("Failed to fetch leaderboard");
+      if (!res.ok) throw new Error("Failed to fetch GBP leaderboard");
       return res.json();
     },
+    enabled: showGbp,
   });
+
+  const eur = useQuery<DuneApiResponse<LeaderboardEntry>>({
+    queryKey: ["supply-leaderboard-eur"],
+    queryFn: async () => {
+      const res = await fetch("/api/terminal/euro-stablecoin/leaderboard");
+      if (!res.ok) throw new Error("Failed to fetch EUR leaderboard");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const entries: LeaderboardEntry[] = [];
+  if (showGbp && gbp.data?.data) entries.push(...gbp.data.data);
+  if (showEur && eur.data?.data) entries.push(...eur.data.data);
+
+  // Re-sort by USD supply when in ALL mode
+  if (currency === "ALL") {
+    entries.sort((a, b) => b.supply_usd - a.supply_usd);
+  }
+
+  return {
+    data: entries,
+    isLoading: (showGbp && gbp.isLoading) || (showEur && eur.isLoading),
+    error: (showGbp && gbp.error) || (showEur && eur.error),
+    lastUpdated: gbp.data?.lastUpdated || eur.data?.lastUpdated,
+  };
+}
+
+export default function SupplyLeaderboard() {
+  const { currency } = useCurrencyFilter();
+  const { data: entries, isLoading, error, lastUpdated } = useLeaderboardData(currency);
 
   if (error) {
     return (
@@ -57,7 +92,7 @@ export default function SupplyLeaderboard() {
             <th>Token</th>
             <th>Issuer</th>
             <th>Chains</th>
-            <th className="text-right">Supply (GBP)</th>
+            <th className="text-right">Supply ({currency === "ALL" ? "Native" : currency})</th>
             <th className="text-right">Supply (USD)</th>
             <th className="text-right">Share</th>
           </tr>
@@ -65,8 +100,10 @@ export default function SupplyLeaderboard() {
         <tbody>
           {isLoading
             ? Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-            : data?.data?.map((entry, idx) => {
+            : entries?.map((entry, idx) => {
                 const meta = TOKEN_META[entry.token];
+                const isEur = ["EURC", "EURT"].includes(entry.token);
+                const nativeFormat = isEur ? formatEUR : formatGBP;
                 return (
                   <tr key={entry.token}>
                     <td className="text-[#6B7280]">{idx + 1}</td>
@@ -75,12 +112,7 @@ export default function SupplyLeaderboard() {
                         href={`/terminal/BritishStablecoin/${entry.token}`}
                         className="flex items-center hover:underline"
                       >
-                        <span
-                          className="token-dot"
-                          style={{
-                            backgroundColor: meta?.color ?? "#E0E0E0",
-                          }}
-                        />
+                        <TokenLogo symbol={entry.token} size={16} />
                         <span
                           className="font-bold"
                           style={{ color: meta?.color ?? "#E0E0E0" }}
@@ -92,7 +124,7 @@ export default function SupplyLeaderboard() {
                     <td className="text-[#6B7280]">{entry.issuer}</td>
                     <td>{formatNumber(entry.num_chains)}</td>
                     <td className="text-right font-bold">
-                      {formatGBP(entry.supply_gbp)}
+                      {currency === "ALL" ? formatUSD(entry.supply_usd) : nativeFormat(entry.supply_gbp)}
                     </td>
                     <td className="text-right text-[#6B7280]">
                       {formatUSD(entry.supply_usd)}

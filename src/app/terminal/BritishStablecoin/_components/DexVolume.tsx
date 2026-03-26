@@ -15,7 +15,9 @@ import { CHART_COLORS } from "@/lib/constants";
 import { formatCompactUSD } from "@/lib/format";
 import type { DexVolumeEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
+import { TokenLogo } from "@/components/TokenLogo";
 import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
+import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
 
 function formatWeekAxis(dateStr: string) {
   const d = new Date(dateStr);
@@ -39,8 +41,12 @@ function pivotByWeek(rows: DexVolumeEntry[]) {
 }
 
 export default function DexVolume() {
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
   const [range, setRange] = useState<TimeRange>("90d");
-  const { data, isLoading, error } = useQuery<
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<DexVolumeEntry>
   >({
     queryKey: ["dex-volume"],
@@ -51,26 +57,52 @@ export default function DexVolume() {
       if (!res.ok) throw new Error("Failed to fetch DEX volume");
       return res.json();
     },
+    enabled: showGbp,
   });
 
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<DexVolumeEntry>
+  >({
+    queryKey: ["dex-volume-eur"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/terminal/euro-stablecoin/dex-volume"
+      );
+      if (!res.ok) throw new Error("Failed to fetch EUR DEX volume");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+
+  const merged = useMemo(() => {
+    const all: DexVolumeEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    return all.filter((r) => tokenMatchesCurrency(r.token, currency));
+  }, [gbpData, eurData, currency, showGbp, showEur]);
+
   const chartData = useMemo(() => {
-    if (!data?.data) return [];
+    if (!merged.length) return [];
     const cutoff = getCutoffDate(range);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    const filtered = data.data.filter((r) => {
+    const filtered = merged.filter((r) => {
       const d = new Date(r.week);
       if (d > today) return false;
       if (cutoff && d < cutoff) return false;
       return true;
     });
     return pivotByWeek(filtered);
-  }, [data, range]);
+  }, [merged, range]);
 
   const tokens = useMemo(() => {
-    if (!data?.data) return [];
-    return [...new Set(data.data.map((r) => r.token))];
-  }, [data]);
+    if (!merged.length) return [];
+    return [...new Set(merged.map((r) => r.token))];
+  }, [merged]);
 
   const dataRange = useMemo(() => {
     if (!chartData.length) return "";
@@ -109,13 +141,7 @@ export default function DexVolume() {
         <div className="flex flex-wrap gap-3 mb-3">
           {tokens.map((token) => (
             <span key={token} className="flex items-center text-[10px] text-[#6B7280]">
-              <span
-                className="token-dot"
-                style={{
-                  backgroundColor:
-                    CHART_COLORS[token as keyof typeof CHART_COLORS] ?? "#E0E0E0",
-                }}
-              />
+              <TokenLogo symbol={token} size={12} />
               {token}
             </span>
           ))}

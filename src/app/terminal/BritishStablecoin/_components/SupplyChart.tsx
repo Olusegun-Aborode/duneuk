@@ -12,16 +12,18 @@ import {
   CartesianGrid,
 } from "recharts";
 import { CHART_COLORS } from "@/lib/constants";
-import { formatGBP } from "@/lib/format";
+import { formatGBP, formatEUR, formatUSD, formatNative } from "@/lib/format";
+import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
 import type { SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
+import { TokenLogo } from "@/components/TokenLogo";
 import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
 
-function pivotData(rows: SupplyHistoryEntry[]) {
+function pivotData(rows: SupplyHistoryEntry[], useUsd: boolean) {
   const byDay: Record<string, Record<string, number>> = {};
   for (const row of rows) {
     if (!byDay[row.day]) byDay[row.day] = {};
-    byDay[row.day][row.token] = row.supply_gbp;
+    byDay[row.day][row.token] = useUsd ? row.supply_usd : row.supply_gbp;
   }
   return Object.entries(byDay)
     .map(([day, values]) => ({ day, ...values }))
@@ -39,37 +41,59 @@ function formatDateAxis(dateStr: string) {
 
 export default function SupplyChart() {
   const [range, setRange] = useState<TimeRange>("180d");
-  const { data, isLoading, error } = useQuery<
-    DuneApiResponse<SupplyHistoryEntry>
-  >({
-    queryKey: ["supply-history"],
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+  const useUsd = currency === "ALL";
+
+  const gbp = useQuery<DuneApiResponse<SupplyHistoryEntry>>({
+    queryKey: ["supply-history-gbp"],
     queryFn: async () => {
-      const res = await fetch(
-        "/api/terminal/british-stablecoin/supply-history"
-      );
-      if (!res.ok) throw new Error("Failed to fetch supply history");
+      const res = await fetch("/api/terminal/british-stablecoin/supply-history");
+      if (!res.ok) throw new Error("Failed to fetch GBP supply history");
       return res.json();
     },
+    enabled: showGbp,
   });
 
+  const eur = useQuery<DuneApiResponse<SupplyHistoryEntry>>({
+    queryKey: ["supply-history-eur"],
+    queryFn: async () => {
+      const res = await fetch("/api/terminal/euro-stablecoin/supply-history");
+      if (!res.ok) throw new Error("Failed to fetch EUR supply history");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbp.isLoading) || (showEur && eur.isLoading);
+  const error = (showGbp && gbp.error) || (showEur && eur.error);
+
+  const allRows = useMemo(() => {
+    const rows: SupplyHistoryEntry[] = [];
+    if (showGbp && gbp.data?.data) rows.push(...gbp.data.data);
+    if (showEur && eur.data?.data) rows.push(...eur.data.data);
+    return rows;
+  }, [gbp.data, eur.data, showGbp, showEur]);
+
   const chartData = useMemo(() => {
-    if (!data?.data) return [];
+    if (!allRows.length) return [];
     const cutoff = getCutoffDate(range);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    const filtered = data.data.filter((r) => {
+    const filtered = allRows.filter((r) => {
       const d = new Date(r.day);
       if (d > today) return false;
       if (cutoff && d < cutoff) return false;
       return true;
     });
-    return pivotData(filtered);
-  }, [data, range]);
+    return pivotData(filtered, useUsd);
+  }, [allRows, range, useUsd]);
 
   const tokens = useMemo(() => {
-    if (!data?.data) return [];
-    return [...new Set(data.data.map((r) => r.token))];
-  }, [data]);
+    if (!allRows.length) return [];
+    return [...new Set(allRows.map((r) => r.token))];
+  }, [allRows]);
 
   const dataRange = useMemo(() => {
     if (!chartData.length) return "";
@@ -108,13 +132,7 @@ export default function SupplyChart() {
         <div className="flex flex-wrap gap-3 mb-3">
           {tokens.map((token) => (
             <span key={token} className="flex items-center text-[10px] text-[#6B7280]">
-              <span
-                className="token-dot"
-                style={{
-                  backgroundColor:
-                    CHART_COLORS[token as keyof typeof CHART_COLORS] ?? "#E0E0E0",
-                }}
-              />
+              <TokenLogo symbol={token} size={12} />
               {token}
             </span>
           ))}
@@ -140,7 +158,7 @@ export default function SupplyChart() {
                 tickLine={false}
               />
               <YAxis
-                tickFormatter={(v: number) => formatGBP(v)}
+                tickFormatter={(v: number) => formatNative(v, currency)}
                 tick={{ fill: "#6B7280", fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
@@ -156,7 +174,7 @@ export default function SupplyChart() {
                 }}
                 labelStyle={{ color: "#6B7280" }}
                 formatter={(value, name) => [
-                  formatGBP(Number(value ?? 0)),
+                  formatNative(Number(value ?? 0), currency),
                   String(name),
                 ]}
               />

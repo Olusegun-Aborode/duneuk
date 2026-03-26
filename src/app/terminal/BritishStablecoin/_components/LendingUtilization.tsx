@@ -1,13 +1,20 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { formatCompactUSD, formatNumber, formatPercent } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
+import { TokenLogo } from "@/components/TokenLogo";
 import InsightPanel from "./InsightPanel";
 import type { LendingUtilizationEntry, DuneApiResponse } from "@/lib/types";
+import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
 
 export default function LendingUtilization() {
-  const { data, isLoading, error } = useQuery<
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<LendingUtilizationEntry>
   >({
     queryKey: ["lending"],
@@ -18,7 +25,33 @@ export default function LendingUtilization() {
       if (!res.ok) throw new Error("Failed to fetch lending data");
       return res.json();
     },
+    enabled: showGbp,
   });
+
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<LendingUtilizationEntry>
+  >({
+    queryKey: ["lending-eur"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/terminal/euro-stablecoin/lending"
+      );
+      if (!res.ok) throw new Error("Failed to fetch EUR lending data");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+
+  const data = useMemo(() => {
+    const all: LendingUtilizationEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    return { data: all.filter((r) => tokenMatchesCurrency(r.token, currency)) };
+  }, [gbpData, eurData, currency, showGbp, showEur]);
 
   if (error) {
     return (
@@ -102,10 +135,7 @@ export default function LendingUtilization() {
                 <td className="capitalize">{entry.blockchain}</td>
                 <td>
                   <span className="flex items-center">
-                    <span
-                      className="token-dot"
-                      style={{ backgroundColor: meta?.color ?? "#E0E0E0" }}
-                    />
+                    <TokenLogo symbol={entry.token} size={16} />
                     <span style={{ color: meta?.color ?? "#E0E0E0" }}>
                       {entry.token}
                     </span>

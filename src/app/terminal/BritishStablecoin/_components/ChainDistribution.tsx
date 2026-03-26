@@ -3,10 +3,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { formatGBP, formatPercent } from "@/lib/format";
+import { formatNative, formatPercent } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
 import type { ChainDistributionEntry, DuneApiResponse } from "@/lib/types";
+import { ChainLogo } from "@/components/ChainLogo";
 import ChartWatermark from "./ChartWatermark";
+import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
 
 const CHAIN_COLORS: Record<string, string> = {
   ethereum: "#627EEA",
@@ -22,7 +24,11 @@ const CHAIN_COLORS: Record<string, string> = {
 };
 
 export default function ChainDistribution() {
-  const { data, isLoading, error } = useQuery<
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<ChainDistributionEntry>
   >({
     queryKey: ["chain-distribution"],
@@ -33,19 +39,45 @@ export default function ChainDistribution() {
       if (!res.ok) throw new Error("Failed to fetch chain distribution");
       return res.json();
     },
+    enabled: showGbp,
   });
+
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<ChainDistributionEntry>
+  >({
+    queryKey: ["chain-distribution-eur"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/terminal/euro-stablecoin/chain-distribution"
+      );
+      if (!res.ok) throw new Error("Failed to fetch EUR chain distribution");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+
+  const merged = useMemo(() => {
+    const all: ChainDistributionEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    return all.filter((r) => tokenMatchesCurrency(r.token, currency));
+  }, [gbpData, eurData, currency, showGbp, showEur]);
 
   // Aggregate by chain for the pie chart
   const pieData = useMemo(() => {
-    if (!data?.data) return [];
+    if (!merged.length) return [];
     const byChain: Record<string, number> = {};
-    for (const entry of data.data) {
+    for (const entry of merged) {
       byChain[entry.blockchain] = (byChain[entry.blockchain] ?? 0) + (entry.supply_gbp ?? 0);
     }
     return Object.entries(byChain)
       .map(([chain, value]) => ({ name: chain, value }))
       .sort((a, b) => b.value - a.value);
-  }, [data]);
+  }, [merged]);
 
   if (error) {
     return (
@@ -102,7 +134,7 @@ export default function ChainDistribution() {
                     fontSize: 11,
                     fontFamily: "monospace",
                   }}
-                  formatter={(value) => [formatGBP(Number(value ?? 0))]}
+                  formatter={(value) => [formatNative(Number(value ?? 0), currency)]}
                   labelFormatter={(label) => String(label).charAt(0).toUpperCase() + String(label).slice(1)}
                 />
               </PieChart>
@@ -115,10 +147,7 @@ export default function ChainDistribution() {
                 const pct = total > 0 ? (entry.value / total) * 100 : 0;
                 return (
                   <span key={entry.name} className="flex items-center text-[10px] text-[#9CA3AF]">
-                    <span
-                      className="token-dot"
-                      style={{ backgroundColor: CHAIN_COLORS[entry.name] ?? "#6B7280" }}
-                    />
+                    <ChainLogo name={entry.name} size={12} color={CHAIN_COLORS[entry.name] ?? "#6B7280"} />
                     <span className="capitalize">{entry.name}</span>
                     <span className="text-[#6B7280] ml-1">{formatPercent(pct)}</span>
                   </span>

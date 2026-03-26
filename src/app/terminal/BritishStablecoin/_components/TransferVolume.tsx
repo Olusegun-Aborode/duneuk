@@ -1,9 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { formatGBP, formatNumber } from "@/lib/format";
+import { useMemo } from "react";
+import { formatNative, formatNumber } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
+import { TokenLogo } from "@/components/TokenLogo";
 import type { TransferVolumeEntry, DuneApiResponse } from "@/lib/types";
+import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
 
 function SkeletonRow() {
   return (
@@ -18,7 +21,11 @@ function SkeletonRow() {
 }
 
 export default function TransferVolume() {
-  const { data, isLoading, error } = useQuery<
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<TransferVolumeEntry>
   >({
     queryKey: ["transfer-volume"],
@@ -29,7 +36,33 @@ export default function TransferVolume() {
       if (!res.ok) throw new Error("Failed to fetch transfer volume");
       return res.json();
     },
+    enabled: showGbp,
   });
+
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<TransferVolumeEntry>
+  >({
+    queryKey: ["transfer-volume-eur"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/terminal/euro-stablecoin/transfer-volume"
+      );
+      if (!res.ok) throw new Error("Failed to fetch EUR transfer volume");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+
+  const data = useMemo(() => {
+    const all: TransferVolumeEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    return { data: all.filter((r) => tokenMatchesCurrency(r.token, currency)) };
+  }, [gbpData, eurData, currency, showGbp, showEur]);
 
   if (error) {
     return (
@@ -57,7 +90,7 @@ export default function TransferVolume() {
             <th>Chain</th>
             <th>Token</th>
             <th className="text-right">Transfers</th>
-            <th className="text-right">Volume (GBP)</th>
+            <th className="text-right">Volume ({currency === "ALL" ? "Native" : currency})</th>
             <th className="text-right">Senders</th>
             <th className="text-right">Receivers</th>
           </tr>
@@ -74,12 +107,7 @@ export default function TransferVolume() {
                     <td className="capitalize">{entry.blockchain}</td>
                     <td>
                       <span className="flex items-center">
-                        <span
-                          className="token-dot"
-                          style={{
-                            backgroundColor: meta?.color ?? "#E0E0E0",
-                          }}
-                        />
+                        <TokenLogo symbol={entry.token} size={16} />
                         <span
                           className="font-bold"
                           style={{ color: meta?.color ?? "#E0E0E0" }}
@@ -92,7 +120,7 @@ export default function TransferVolume() {
                       {formatNumber(entry.num_transfers)}
                     </td>
                     <td className="text-right font-bold">
-                      {formatGBP(entry.volume_gbp)}
+                      {formatNative(entry.volume_gbp, currency)}
                     </td>
                     <td className="text-right text-[#6B7280]">
                       {formatNumber(entry.unique_senders)}

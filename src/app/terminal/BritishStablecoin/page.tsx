@@ -18,6 +18,8 @@ import CexListings from "./_components/CexListings";
 import Methodology from "./_components/Methodology";
 import NewsletterArchive from "./_components/NewsletterArchive";
 import ScreenshotButton from "./_components/ScreenshotButton";
+import { CurrencyFilterProvider } from "@/contexts/CurrencyFilterContext";
+import { CurrencyFilter } from "@/components/CurrencyFilter";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -134,59 +136,64 @@ export default function BritishStablecoinPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
 
   return (
-    <div id="terminal-content" className="space-y-4">
-      {/* Header bar */}
-      <div className="flex items-end justify-between flex-wrap gap-2">
-        <div>
-          <a
-            href="https://www.duneuk.com/"
-            className="inline-flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors mb-1"
-          >
-            <span>&larr;</span> Back to DuneUK
-          </a>
-          <div className="flex items-center gap-2">
-            <span className="text-[var(--accent-green)] text-xs font-bold">&pound;</span>
-            <h1 className="text-lg font-bold text-[var(--foreground)] tracking-tight">
-              British Stablecoin Terminal
-            </h1>
+    <CurrencyFilterProvider>
+      <div id="terminal-content" className="space-y-4">
+        {/* Header bar */}
+        <div className="flex items-end justify-between flex-wrap gap-2">
+          <div>
+            <a
+              href="https://www.duneuk.com/"
+              className="inline-flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors mb-1"
+            >
+              <span>&larr;</span> Back to DuneUK
+            </a>
+            <div className="flex items-center gap-2">
+              <span className="text-[var(--accent-green)] text-xs font-bold">&pound;</span>
+              <h1 className="text-lg font-bold text-[var(--foreground)] tracking-tight">
+                Stablecoin Terminal
+              </h1>
+            </div>
+            <p className="text-[var(--text-muted)] text-[11px] mt-0.5">
+              Real-time supply, volume and holder data &middot; 8 tokens &middot;
+              GBP &amp; EUR &middot; 15+ chain deployments
+            </p>
           </div>
-          <p className="text-[var(--text-muted)] text-[11px] mt-0.5">
-            Real-time supply, volume and holder data &middot; 6 tokens &middot;
-            15+ chain deployments
-          </p>
+          <div className="flex items-center gap-3">
+            <CurrencyFilter />
+            <ScreenshotButton targetId="terminal-content" />
+          </div>
         </div>
-        <ScreenshotButton targetId="terminal-content" />
+
+        {/* Tab nav */}
+        <nav className="flex gap-0.5 border-b border-[var(--border)]">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "text-[var(--accent-green)] border-[var(--accent-green)]"
+                  : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Counters row */}
+        <MarketOverview />
+
+        {/* Gated content */}
+        <EmailGate>
+          {activeTab === "overview" && <OverviewTab />}
+          {activeTab === "utilisation" && <UtilisationTab />}
+          {activeTab === "methodology" && <Methodology />}
+        </EmailGate>
+
+        {/* Newsletter — always visible below gated content */}
+        <NewsletterArchive />
       </div>
-
-      {/* Tab nav */}
-      <nav className="flex gap-0.5 border-b border-[var(--border)]">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? "text-[var(--accent-green)] border-[var(--accent-green)]"
-                : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
-      {/* Counters row */}
-      <MarketOverview />
-
-      {/* Gated content */}
-      <EmailGate>
-        {activeTab === "overview" && <OverviewTab />}
-        {activeTab === "utilisation" && <UtilisationTab />}
-        {activeTab === "methodology" && <Methodology />}
-      </EmailGate>
-
-      {/* Newsletter — always visible below gated content */}
-      <NewsletterArchive />
-    </div>
+    </CurrencyFilterProvider>
   );
 }

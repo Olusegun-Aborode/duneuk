@@ -15,7 +15,9 @@ import { CHART_COLORS } from "@/lib/constants";
 import { formatNumber } from "@/lib/format";
 import type { DailyActiveUsersEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
+import { TokenLogo } from "@/components/TokenLogo";
 import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
+import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
 
 function pivotData(rows: DailyActiveUsersEntry[]) {
   const byDay: Record<string, Record<string, number>> = {};
@@ -38,8 +40,12 @@ function formatDateAxis(dateStr: string) {
 }
 
 export default function DailyActiveUsers() {
+  const { currency } = useCurrencyFilter();
+  const showGbp = currency === "GBP" || currency === "ALL";
+  const showEur = currency === "EUR" || currency === "ALL";
   const [range, setRange] = useState<TimeRange>("90d");
-  const { data, isLoading, error } = useQuery<
+
+  const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<DailyActiveUsersEntry>
   >({
     queryKey: ["daily-active-users"],
@@ -50,26 +56,52 @@ export default function DailyActiveUsers() {
       if (!res.ok) throw new Error("Failed to fetch daily active users");
       return res.json();
     },
+    enabled: showGbp,
   });
 
+  const { data: eurData, isLoading: eurLoading, error: eurError } = useQuery<
+    DuneApiResponse<DailyActiveUsersEntry>
+  >({
+    queryKey: ["daily-active-users-eur"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/terminal/euro-stablecoin/active-users"
+      );
+      if (!res.ok) throw new Error("Failed to fetch EUR daily active users");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
+  const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
+  const error = (showGbp && gbpError) || (showEur && eurError);
+
+  const merged = useMemo(() => {
+    const all: DailyActiveUsersEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    return all.filter((r) => tokenMatchesCurrency(r.token, currency));
+  }, [gbpData, eurData, currency, showGbp, showEur]);
+
   const chartData = useMemo(() => {
-    if (!data?.data) return [];
+    if (!merged.length) return [];
     const cutoff = getCutoffDate(range);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    const filtered = data.data.filter((r) => {
+    const filtered = merged.filter((r) => {
       const d = new Date(r.day);
       if (d > today) return false;
       if (cutoff && d < cutoff) return false;
       return true;
     });
     return pivotData(filtered);
-  }, [data, range]);
+  }, [merged, range]);
 
   const tokens = useMemo(() => {
-    if (!data?.data) return [];
-    return [...new Set(data.data.map((r) => r.token))];
-  }, [data]);
+    if (!merged.length) return [];
+    return [...new Set(merged.map((r) => r.token))];
+  }, [merged]);
 
   const dataRange = useMemo(() => {
     if (!chartData.length) return "";
@@ -108,13 +140,7 @@ export default function DailyActiveUsers() {
         <div className="flex flex-wrap gap-3 mb-3">
           {tokens.map((token) => (
             <span key={token} className="flex items-center text-[10px] text-[#6B7280]">
-              <span
-                className="token-dot"
-                style={{
-                  backgroundColor:
-                    CHART_COLORS[token as keyof typeof CHART_COLORS] ?? "#E0E0E0",
-                }}
-              />
+              <TokenLogo symbol={token} size={12} />
               {token}
             </span>
           ))}
