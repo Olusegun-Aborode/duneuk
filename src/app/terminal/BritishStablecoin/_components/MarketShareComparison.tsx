@@ -2,11 +2,22 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import { formatCompactUSD } from "@/lib/format";
 import { CHART_COLORS } from "@/lib/constants";
-import { TokenLogo } from "@/components/TokenLogo";
-import type { MarketShareEntry, MarketOverview, DuneApiResponse } from "@/lib/types";
-import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
+import type { MarketShareEntry, MarketOverview, SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
+import { useCurrencyFilter, GBP_TOKENS, EUR_TOKENS } from "@/contexts/CurrencyFilterContext";
+import { PanelFilters } from "@/components/PanelFilters";
+import ChartWatermark from "./ChartWatermark";
+import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
 
 const GROUP_COLORS: Record<string, string> = {
   GBP: "#00FF88",
@@ -24,12 +35,28 @@ interface AlliumToken {
   };
 }
 
+function formatDateAxis(dateStr: string) {
+  const d = new Date(dateStr);
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+function getCurrencyGroup(token: string): "GBP" | "EUR" | null {
+  if ((GBP_TOKENS as readonly string[]).includes(token)) return "GBP";
+  if ((EUR_TOKENS as readonly string[]).includes(token)) return "EUR";
+  return null;
+}
+
 export default function MarketShareComparison() {
   const { currency } = useCurrencyFilter();
   const showGbp = currency === "GBP" || currency === "ALL";
   const showEur = currency === "EUR" || currency === "ALL";
+  const [range, setRange] = useState<TimeRange>("180d");
 
-  // Market share per-token breakdown
+  // Market share per-token breakdown (for counters)
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<MarketShareEntry>
   >({
@@ -54,7 +81,7 @@ export default function MarketShareComparison() {
     enabled: showEur,
   });
 
-  // Accurate totals from overview endpoints (fixes data mismatch)
+  // Accurate totals from overview endpoints
   const { data: gbpOverview } = useQuery<DuneApiResponse<MarketOverview>>({
     queryKey: ["market-overview-gbp"],
     queryFn: async () => {
@@ -75,25 +102,29 @@ export default function MarketShareComparison() {
     enabled: showEur,
   });
 
+  // Supply history for area chart
+  const { data: gbpHistory } = useQuery<DuneApiResponse<SupplyHistoryEntry>>({
+    queryKey: ["supply-history-gbp"],
+    queryFn: async () => {
+      const res = await fetch("/api/terminal/british-stablecoin/supply-history");
+      if (!res.ok) throw new Error("Failed to fetch GBP supply history");
+      return res.json();
+    },
+    enabled: showGbp,
+  });
+
+  const { data: eurHistory } = useQuery<DuneApiResponse<SupplyHistoryEntry>>({
+    queryKey: ["supply-history-eur"],
+    queryFn: async () => {
+      const res = await fetch("/api/terminal/euro-stablecoin/supply-history");
+      if (!res.ok) throw new Error("Failed to fetch EUR supply history");
+      return res.json();
+    },
+    enabled: showEur,
+  });
+
   const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
   const error = (showGbp && gbpError) || (showEur && eurError);
-
-  const data = useMemo(() => {
-    const all: MarketShareEntry[] = [
-      ...(showGbp && gbpData?.data ? gbpData.data : []),
-      ...(showEur && eurData?.data ? eurData.data : []),
-    ];
-    // Deduplicate by symbol (both endpoints may return USD tokens)
-    const seen = new Set<string>();
-    const deduped: MarketShareEntry[] = [];
-    for (const entry of all) {
-      if (!seen.has(entry.symbol)) {
-        seen.add(entry.symbol);
-        deduped.push(entry);
-      }
-    }
-    return { data: deduped };
-  }, [gbpData, eurData, showGbp, showEur]);
 
   // Fetch Solana GBP token data from Allium
   const { data: solanaData } = useQuery<{
@@ -110,26 +141,34 @@ export default function MarketShareComparison() {
     },
   });
 
-  // Merge Dune + Allium data
-  const { rows, grouped, gbpShare } = useMemo(() => {
-    const duneRows: MarketShareEntry[] = data?.data ?? [];
-
-    // Add Solana tokens from Allium as GBP entries
+  // Compute counter totals from market-share / overview data
+  const { grouped, gbpShare, tokensByGroup } = useMemo(() => {
+    const duneRows: MarketShareEntry[] = [
+      ...(showGbp && gbpData?.data ? gbpData.data : []),
+      ...(showEur && eurData?.data ? eurData.data : []),
+    ];
+    // Deduplicate
+    const seen = new Set<string>();
+    const allRows: MarketShareEntry[] = [];
+    for (const entry of duneRows) {
+      if (!seen.has(entry.symbol)) {
+        seen.add(entry.symbol);
+        allRows.push(entry);
+      }
+    }
+    // Add Solana tokens
     const alliumRows: MarketShareEntry[] = (solanaData?.data ?? []).map((t) => ({
       currency_group: "GBP",
       symbol: `${t.info.symbol} (SOL)`,
       total_supply: t.attributes.total_supply ?? 0,
       total_supply_usd: t.attributes.fully_diluted_valuation_usd ?? 0,
     }));
+    const rows = [...allRows, ...alliumRows];
 
-    const allRows = [...duneRows, ...alliumRows];
-
-    // Use overview endpoints for accurate GBP/EUR totals (fixes data mismatch)
     const totals: Record<string, number> = { GBP: 0, USD: 0, EUR: 0 };
     if (gbpOverview?.data?.[0]) totals.GBP = gbpOverview.data[0].total_supply_usd;
     if (eurOverview?.data?.[0]) totals.EUR = eurOverview.data[0].total_supply_usd;
-    // USD total still comes from market share query (no separate USD overview)
-    for (const row of allRows) {
+    for (const row of rows) {
       if (row.currency_group === "USD") {
         totals.USD += row.total_supply_usd ?? 0;
       }
@@ -138,13 +177,7 @@ export default function MarketShareComparison() {
     const total = totals.GBP + totals.USD + totals.EUR;
     const share = total === 0 ? 0 : (totals.GBP / total) * 100;
 
-    return { rows: allRows, grouped: totals, gbpShare: share };
-  }, [data, solanaData, gbpOverview, eurOverview]);
-
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  // Group token symbols by currency for the tooltip
-  const tokensByGroup = useMemo(() => {
+    // Group token symbols for tooltip
     const groups: Record<string, string[]> = { GBP: [], USD: [], EUR: [] };
     for (const row of rows) {
       const g = row.currency_group;
@@ -152,8 +185,42 @@ export default function MarketShareComparison() {
         groups[g].push(row.symbol);
       }
     }
-    return groups;
-  }, [rows]);
+
+    return { grouped: totals, gbpShare: share, tokensByGroup: groups };
+  }, [gbpData, eurData, solanaData, gbpOverview, eurOverview, showGbp, showEur]);
+
+  // Aggregate supply-history by currency group per day for the area chart
+  const chartData = useMemo(() => {
+    const historyRows: SupplyHistoryEntry[] = [
+      ...(showGbp && gbpHistory?.data ? gbpHistory.data : []),
+      ...(showEur && eurHistory?.data ? eurHistory.data : []),
+    ];
+    if (!historyRows.length) return [];
+
+    const cutoff = getCutoffDate(range);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    // Aggregate by day and currency group
+    const byDay: Record<string, { GBP: number; EUR: number }> = {};
+    for (const row of historyRows) {
+      const d = new Date(row.day);
+      if (d > today) continue;
+      if (cutoff && d < cutoff) continue;
+
+      const group = getCurrencyGroup(row.token);
+      if (!group) continue;
+
+      if (!byDay[row.day]) byDay[row.day] = { GBP: 0, EUR: 0 };
+      byDay[row.day][group] += row.supply_usd;
+    }
+
+    return Object.entries(byDay)
+      .map(([day, values]) => ({ day, ...values }))
+      .sort((a, b) => a.day.localeCompare(b.day));
+  }, [gbpHistory, eurHistory, range, showGbp, showEur]);
+
+  const [showTooltip, setShowTooltip] = useState(false);
 
   if (error) {
     return (
@@ -225,7 +292,11 @@ export default function MarketShareComparison() {
             )}
           </div>
         </div>
-        <span className="tui-panel-badge">GBP vs USD vs EUR</span>
+        <div className="flex items-center gap-2">
+          <PanelFilters />
+          <span className="tui-panel-badge">GBP vs USD vs EUR</span>
+          <TimeRangeSelector value={range} onChange={setRange} />
+        </div>
       </div>
 
       <div className="p-4 lg:p-5">
@@ -248,62 +319,85 @@ export default function MarketShareComparison() {
               ))}
             </div>
 
-            {/* Token breakdown table */}
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Currency</th>
-                  <th>Token</th>
-                  <th className="text-right">Supply (native)</th>
-                  <th className="text-right">Supply (USD)</th>
-                  <th className="text-right">Source</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((entry, idx) => {
-                  const isSolana = entry.symbol.includes("(SOL)");
-                  const baseSymbol = entry.symbol.replace(" (SOL)", "");
-                  const tokenColor =
-                    CHART_COLORS[baseSymbol as keyof typeof CHART_COLORS] ??
-                    GROUP_COLORS[entry.currency_group] ??
-                    "#E0E0E0";
-                  return (
-                    <tr key={`${entry.symbol}-${idx}`}>
-                      <td>
-                        <span
-                          className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                          style={{
-                            color: GROUP_COLORS[entry.currency_group] ?? "#E0E0E0",
-                            backgroundColor: `${GROUP_COLORS[entry.currency_group] ?? "#E0E0E0"}15`,
-                          }}
-                        >
-                          {entry.currency_group}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="flex items-center">
-                          <TokenLogo symbol={entry.symbol} size={16} />
-                          <span className="font-bold" style={{ color: tokenColor }}>
-                            {entry.symbol}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="text-right text-[#6B7280]">
-                        {formatCompactUSD(entry.total_supply).replace("$", "")}
-                      </td>
-                      <td className="text-right font-bold">
-                        {formatCompactUSD(entry.total_supply_usd)}
-                      </td>
-                      <td className="text-right">
-                        <span className={`text-[9px] ${isSolana ? "text-[#9945FF]" : "text-[#5B7FFF]"}`}>
-                          {isSolana ? "[Allium]" : "[Dune]"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            {/* Stacked area chart: GBP vs EUR supply over time */}
+            <div className="relative">
+              <ChartWatermark />
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={chartData}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,0.04)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="day"
+                    tickFormatter={formatDateAxis}
+                    tick={{ fill: "#6B7280", fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(v: number) => formatCompactUSD(v)}
+                    tick={{ fill: "#6B7280", fontSize: 10 }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={60}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#111318",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "4px",
+                      fontSize: 11,
+                      fontFamily: "monospace",
+                    }}
+                    labelStyle={{ color: "#6B7280" }}
+                    formatter={(value, name) => [
+                      formatCompactUSD(Number(value ?? 0)),
+                      String(name),
+                    ]}
+                  />
+                  {showGbp && (
+                    <Area
+                      type="monotone"
+                      dataKey="GBP"
+                      stackId="1"
+                      stroke={GROUP_COLORS.GBP}
+                      fill={GROUP_COLORS.GBP}
+                      fillOpacity={0.15}
+                      strokeWidth={1.5}
+                    />
+                  )}
+                  {showEur && (
+                    <Area
+                      type="monotone"
+                      dataKey="EUR"
+                      stackId="1"
+                      stroke={GROUP_COLORS.EUR}
+                      fill={GROUP_COLORS.EUR}
+                      fillOpacity={0.15}
+                      strokeWidth={1.5}
+                    />
+                  )}
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-center gap-4 text-[10px] text-[#6B7280] mt-1">
+              {showGbp && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: GROUP_COLORS.GBP }} />
+                  GBP
+                </span>
+              )}
+              {showEur && (
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: GROUP_COLORS.EUR }} />
+                  EUR
+                </span>
+              )}
+            </div>
           </>
         )}
       </div>

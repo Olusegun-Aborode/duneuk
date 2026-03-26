@@ -14,6 +14,7 @@ import {
 import { CHART_COLORS } from "@/lib/constants";
 import { formatGBP, formatEUR, formatUSD, formatNative } from "@/lib/format";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { PanelFilters } from "@/components/PanelFilters";
 import type { SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
 import { TokenLogo } from "@/components/TokenLogo";
@@ -95,13 +96,6 @@ export default function SupplyChart() {
     return [...new Set(allRows.map((r) => r.token))];
   }, [allRows]);
 
-  const dataRange = useMemo(() => {
-    if (!chartData.length) return "";
-    const first = chartData[0].day.slice(0, 10);
-    const last = chartData[chartData.length - 1].day.slice(0, 10);
-    const today = new Date().toISOString().slice(0, 10);
-    return `${first} → ${last > today ? today : last}`;
-  }, [chartData]);
 
   if (error) {
     return (
@@ -122,7 +116,7 @@ export default function SupplyChart() {
       <div className="tui-panel-header">
         <span className="tui-panel-title">Supply Over Time <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
         <div className="flex items-center gap-2">
-          {dataRange && <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>{dataRange}</span>}
+          <PanelFilters />
           <TimeRangeSelector value={range} onChange={setRange} />
         </div>
       </div>

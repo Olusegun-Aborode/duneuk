@@ -16,6 +16,7 @@ import { formatCompactUSD, formatNumber } from "@/lib/format";
 import { DEX_COLORS } from "@/lib/constants";
 import type { DexPlatformEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
+import { PanelFilters } from "@/components/PanelFilters";
 import ChartWatermark from "./ChartWatermark";
 
 export default function DexPlatforms() {
@@ -97,7 +98,7 @@ export default function DexPlatforms() {
     <div className="tui-panel overflow-x-auto">
       <div className="tui-panel-header">
         <span className="tui-panel-title">DEX Platforms <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">90 days</span>
+        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">90 days</span></span>
       </div>
 
       <div className="p-4">
@@ -108,28 +109,28 @@ export default function DexPlatforms() {
             <ChartWatermark />
             <ResponsiveContainer
               width="100%"
-              height={Math.max((data.data?.length ?? 0) * 45, 200)}
+              height={280}
             >
-              <BarChart layout="vertical" data={data.data}>
+              <BarChart data={data.data}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="rgba(255,255,255,0.04)"
                   horizontal={false}
                 />
                 <XAxis
+                  type="category"
+                  dataKey="dex"
+                  tick={{ fill: "#6B7280", fontSize: 9, angle: -45, textAnchor: "end" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
                   type="number"
                   tickFormatter={(v: number) => formatCompactUSD(v)}
                   tick={{ fill: "#6B7280", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="dex"
-                  tick={{ fill: "#6B7280", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={100}
+                  width={70}
                 />
                 <Tooltip
                   content={({ active, payload }) => {

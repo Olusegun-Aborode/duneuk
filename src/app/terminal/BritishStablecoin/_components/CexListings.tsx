@@ -2,6 +2,7 @@
 
 import { TOKEN_META } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
+import { PanelFilters } from "@/components/PanelFilters";
 
 interface CexListing {
   token: string;
@@ -33,7 +34,7 @@ export default function CexListings() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">CEX Listings Report</span>
-        <span className="tui-panel-badge">6 tokens · {new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" })}</span>
+        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">6 tokens · {new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" })}</span></span>
       </div>
 
       <table className="data-table">

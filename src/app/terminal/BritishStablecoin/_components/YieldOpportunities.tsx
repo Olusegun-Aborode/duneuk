@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { formatCompactUSD, formatNumber } from "@/lib/format";
 import { TOKEN_META, DEX_COLORS } from "@/lib/constants";
 import { DexLogo } from "@/components/DexLogo";
@@ -9,6 +9,8 @@ import { ChainLogo } from "@/components/ChainLogo";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { DexPoolEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { PanelFilters } from "@/components/PanelFilters";
+import Link from "next/link";
 
 const DEFAULT_VISIBLE = 9;
 
@@ -26,7 +28,6 @@ export default function YieldOpportunities() {
   const { currency } = useCurrencyFilter();
   const showGbp = currency === "GBP" || currency === "ALL";
   const showEur = currency === "EUR" || currency === "ALL";
-  const [showAll, setShowAll] = useState(false);
 
   const { data: gbpData, isLoading: gbpLoading, error: gbpError } = useQuery<
     DuneApiResponse<DexPoolEntry>
@@ -85,14 +86,13 @@ export default function YieldOpportunities() {
     (a, b) => (b.volume_usd_30d ?? 0) - (a.volume_usd_30d ?? 0)
   );
   const maxVolume = sorted.length > 0 ? sorted[0].volume_usd_30d ?? 1 : 1;
-  const hasMore = sorted.length > DEFAULT_VISIBLE;
-  const visible = showAll ? sorted : sorted.slice(0, DEFAULT_VISIBLE);
+  const visible = sorted.slice(0, DEFAULT_VISIBLE);
 
   return (
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Active LP Pools <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">30 days · min 5 trades</span>
+        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">30 days · min 5 trades</span></span>
       </div>
       <div className="p-3">
         {isLoading ? (
@@ -167,14 +167,14 @@ export default function YieldOpportunities() {
               })}
             </div>
 
-            {hasMore && (
+            {sorted.length > DEFAULT_VISIBLE && (
               <div className="flex justify-center mt-3">
-                <button
-                  onClick={() => setShowAll((v) => !v)}
+                <Link
+                  href="/terminal/BritishStablecoin/pools"
                   className="text-[11px] text-[#5B7FFF] hover:text-[#7B9FFF] transition-colors cursor-pointer"
                 >
-                  {showAll ? "Show less" : `Show all ${sorted.length} pools`}
-                </button>
+                  View all {sorted.length} pools &rarr;
+                </Link>
               </div>
             )}
           </>

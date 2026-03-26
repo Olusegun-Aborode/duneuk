@@ -17,6 +17,7 @@ import InsightPanel from "./InsightPanel";
 import ChartWatermark from "./ChartWatermark";
 import type { LendingUtilizationEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
+import { PanelFilters } from "@/components/PanelFilters";
 
 interface ChartRow {
   label: string;
@@ -173,17 +174,17 @@ export default function LendingUtilization() {
     <div className="tui-panel relative">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Lending & Borrowing <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="tui-panel-badge">Since Jan 2025</span>
+        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">Since Jan 2025</span></span>
       </div>
       <div className="px-2 pt-2 pb-1">
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={260}>
           <BarChart data={chartData} margin={{ top: 8, right: 12, left: 4, bottom: 24 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1E2028" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 10, fill: "#6B7280" }}
               tickLine={false}
-              axisLine={{ stroke: "#2A2E35" }}
+              axisLine={false}
               angle={-20}
               textAnchor="end"
               height={50}
@@ -194,11 +195,11 @@ export default function LendingUtilization() {
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) => formatCompactUSD(v)}
-              width={54}
+              width={58}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-            <Bar dataKey="supplied" name="Supplied" fill="#00FF88" radius={[3, 3, 0, 0]} barSize={18} />
-            <Bar dataKey="borrowed" name="Borrowed" fill="#FF6B35" radius={[3, 3, 0, 0]} barSize={18} />
+            <Bar dataKey="supplied" name="Supplied" fill="#00FF88" radius={[3, 3, 0, 0]} barSize={20} />
+            <Bar dataKey="borrowed" name="Borrowed" fill="#FF6B35" radius={[3, 3, 0, 0]} barSize={20} />
           </BarChart>
         </ResponsiveContainer>
         {/* Legend */}
