@@ -77,7 +77,8 @@ export default function DexPlatforms() {
     return Object.values(byDex).sort((a, b) => (b.volume_usd ?? 0) - (a.volume_usd ?? 0));
   }, [gbpData, eurData, showGbp, showEur]);
 
-  const data = { data: merged };
+  const topDexes = merged.slice(0, 8); // Top 8 for readability
+  const data = { data: topDexes };
   const totalVolume = merged.reduce((sum, d) => sum + (d.volume_usd ?? 0), 0);
 
   if (error) {
@@ -111,7 +112,7 @@ export default function DexPlatforms() {
               width="100%"
               height={280}
             >
-              <BarChart data={data.data}>
+              <BarChart data={data.data} margin={{ bottom: 40 }}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="rgba(255,255,255,0.04)"
@@ -120,9 +121,13 @@ export default function DexPlatforms() {
                 <XAxis
                   type="category"
                   dataKey="dex"
-                  tick={{ fill: "#6B7280", fontSize: 9, angle: -45, textAnchor: "end" }}
+                  tick={{ fill: "#6B7280", fontSize: 9 }}
+                  angle={-35}
+                  textAnchor="end"
                   axisLine={false}
                   tickLine={false}
+                  height={60}
+                  interval={0}
                 />
                 <YAxis
                   type="number"

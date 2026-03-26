@@ -189,17 +189,14 @@ export default function LendingUtilization() {
         <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">Since Jan 2025</span></span>
       </div>
       <div className="px-2 pt-2 pb-1">
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={chartData} margin={{ top: 8, right: 12, left: 4, bottom: 24 }}>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={chartData} margin={{ top: 8, right: 12, left: 4, bottom: 8 }} barGap={4} barCategoryGap="30%">
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 10, fill: "#6B7280" }}
               tickLine={false}
               axisLine={false}
-              angle={-20}
-              textAnchor="end"
-              height={50}
               interval={0}
             />
             <YAxis
