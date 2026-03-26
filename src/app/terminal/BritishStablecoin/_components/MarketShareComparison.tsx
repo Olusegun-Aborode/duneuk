@@ -15,7 +15,6 @@ import { formatCompactUSD } from "@/lib/format";
 import { CHART_COLORS } from "@/lib/constants";
 import type { MarketShareEntry, MarketOverview, SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter, GBP_TOKENS, EUR_TOKENS } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 import ChartWatermark from "./ChartWatermark";
 import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
 
@@ -293,7 +292,6 @@ export default function MarketShareComparison() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <PanelFilters />
           <span className="tui-panel-badge">GBP vs USD vs EUR</span>
           <TimeRangeSelector value={range} onChange={setRange} />
         </div>

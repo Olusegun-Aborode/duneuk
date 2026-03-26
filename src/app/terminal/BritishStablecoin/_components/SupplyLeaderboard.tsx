@@ -6,7 +6,6 @@ import { formatGBP, formatEUR, formatUSD, formatPercent, formatNumber, formatNat
 import { TOKEN_META } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import { useCurrencyFilter, type CurrencyFilter } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 import type { LeaderboardEntry, DuneApiResponse } from "@/lib/types";
 
 function SkeletonRow() {
@@ -84,7 +83,7 @@ export default function SupplyLeaderboard() {
     <div className="tui-panel overflow-x-auto">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Supply Leaderboard</span>
-        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">Ranked by market share <span className="text-[9px] text-[#5B7FFF] ml-1">[Dune]</span></span></span>
+        <span className="tui-panel-badge">Ranked by market share <span className="text-[9px] text-[#5B7FFF] ml-1">[Dune]</span></span>
       </div>
       <table className="data-table">
         <thead>

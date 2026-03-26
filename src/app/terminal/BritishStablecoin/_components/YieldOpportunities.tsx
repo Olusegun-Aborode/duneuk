@@ -9,7 +9,6 @@ import { ChainLogo } from "@/components/ChainLogo";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { DexPoolEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 import Link from "next/link";
 
 const DEFAULT_VISIBLE = 9;
@@ -92,7 +91,7 @@ export default function YieldOpportunities() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Active LP Pools <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">30 days · min 5 trades</span></span>
+        <span className="tui-panel-badge">30 days · min 5 trades</span>
       </div>
       <div className="p-3">
         {isLoading ? (

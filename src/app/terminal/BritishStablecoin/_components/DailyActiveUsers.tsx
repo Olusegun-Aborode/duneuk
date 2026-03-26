@@ -18,7 +18,6 @@ import ChartWatermark from "./ChartWatermark";
 import { TokenLogo } from "@/components/TokenLogo";
 import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 
 function pivotData(rows: DailyActiveUsersEntry[]) {
   const byDay: Record<string, Record<string, number>> = {};
@@ -123,10 +122,7 @@ export default function DailyActiveUsers() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Daily Active Users <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <div className="flex items-center gap-2">
-          <PanelFilters />
-          <TimeRangeSelector value={range} onChange={setRange} />
-        </div>
+        <TimeRangeSelector value={range} onChange={setRange} />
       </div>
 
       <div className="p-4">

@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { formatGBP, formatEUR, formatUSD, formatNumber, timeAgo } from "@/lib/format";
 import { useCurrencyFilter } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 import type {
   MarketOverview as MarketOverviewType,
   DuneApiResponse,
@@ -172,7 +171,6 @@ export default function MarketOverview() {
       <div className="tui-panel-header">
         <span className="tui-panel-title">Market Overview</span>
         <div className="flex items-center gap-3">
-          <PanelFilters />
           {lastUpdated && (
             <span className="tui-panel-badge">
               Updated {timeAgo(new Date(lastUpdated))}

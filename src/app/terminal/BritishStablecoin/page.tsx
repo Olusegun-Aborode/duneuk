@@ -14,7 +14,6 @@ import DexPlatforms from "./_components/DexPlatforms";
 import MarketShareComparison from "./_components/MarketShareComparison";
 import LendingUtilization from "./_components/LendingUtilization";
 import YieldOpportunities from "./_components/YieldOpportunities";
-import CexListings from "./_components/CexListings";
 import Methodology from "./_components/Methodology";
 import NewsletterArchive from "./_components/NewsletterArchive";
 import ScreenshotButton from "./_components/ScreenshotButton";
@@ -39,7 +38,7 @@ const SECTIONS: Record<TabId, { id: string; label: string }[]> = {
   utilisation: [
     { id: "dex-volume", label: "DEX Volume" },
     { id: "dex-platforms", label: "Platforms & Lending" },
-    { id: "lp-pools", label: "Yield & CEX" },
+    { id: "lp-pools", label: "Yield" },
   ],
   methodology: [],
 };
@@ -120,11 +119,8 @@ function UtilisationTab() {
         <LendingUtilization />
       </div>
 
-      <SectionDivider id="lp-pools" label="Yield & CEX Listings" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <YieldOpportunities />
-        <CexListings />
-      </div>
+      <SectionDivider id="lp-pools" label="Liquidity Pools" />
+      <YieldOpportunities />
     </div>
   );
 }
@@ -156,27 +152,31 @@ export default function BritishStablecoinPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <CurrencyFilter />
             <ScreenshotButton targetId="terminal-content" />
           </div>
         </div>
 
-        {/* Tab nav */}
-        <nav className="flex gap-0.5 border-b border-[var(--border)]">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "text-[var(--accent-green)] border-[var(--accent-green)]"
-                  : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        {/* Sticky filter + tab nav bar */}
+        <div className="sticky top-0 z-30 -mx-4 px-4 py-2 backdrop-blur-md" style={{ backgroundColor: "var(--background-translucent, rgba(17,19,24,0.92))" }}>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <nav className="flex gap-0.5">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`text-[11px] uppercase tracking-wider px-4 py-1.5 border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? "text-[var(--accent-green)] border-[var(--accent-green)]"
+                      : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+            <CurrencyFilter />
+          </div>
+        </div>
 
         {/* Counters row */}
         <MarketOverview />

@@ -16,7 +16,6 @@ import { TOKEN_META, CHART_COLORS } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { TransferVolumeEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 import ChartWatermark from "./ChartWatermark";
 
 function SkeletonRow() {
@@ -132,7 +131,6 @@ export default function TransferVolume() {
       <div className="tui-panel-header">
         <span className="tui-panel-title">Transfer Volume <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
         <div className="flex items-center gap-2">
-          <PanelFilters />
           <button
             onClick={() => setShowTable((v) => !v)}
             className="text-[9px] px-1.5 py-0.5 rounded border border-white/10 hover:border-white/20 text-[#6B7280] hover:text-[#E0E0E0] transition-colors"

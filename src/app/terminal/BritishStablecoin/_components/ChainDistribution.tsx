@@ -9,7 +9,6 @@ import type { ChainDistributionEntry, DuneApiResponse } from "@/lib/types";
 import { ChainLogo } from "@/components/ChainLogo";
 import ChartWatermark from "./ChartWatermark";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 
 const CHAIN_COLORS: Record<string, string> = {
   ethereum: "#627EEA",
@@ -98,7 +97,7 @@ export default function ChainDistribution() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Chain Distribution <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">Supply by chain</span></span>
+        <span className="tui-panel-badge">Supply by chain</span>
       </div>
 
       <div className="p-4">

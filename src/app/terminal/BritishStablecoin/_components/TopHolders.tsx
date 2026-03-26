@@ -9,7 +9,6 @@ import { TokenLogo } from "@/components/TokenLogo";
 import type { TopHolderEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 
 export default function TopHolders() {
   const { currency } = useCurrencyFilter();
@@ -85,7 +84,7 @@ export default function TopHolders() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Top Holders <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">By balance</span></span>
+        <span className="tui-panel-badge">By balance</span>
       </div>
 
       <div className="p-4">

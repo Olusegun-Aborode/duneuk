@@ -18,7 +18,6 @@ import ChartWatermark from "./ChartWatermark";
 import { TokenLogo } from "@/components/TokenLogo";
 import TimeRangeSelector, { type TimeRange, getCutoffDate } from "./TimeRangeSelector";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 
 function formatWeekAxis(dateStr: string) {
   const d = new Date(dateStr);
@@ -124,10 +123,7 @@ export default function DexVolume() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">DEX Volume <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <div className="flex items-center gap-2">
-          <PanelFilters />
-          <TimeRangeSelector value={range} onChange={setRange} />
-        </div>
+        <TimeRangeSelector value={range} onChange={setRange} />
       </div>
 
       <div className="p-4">

@@ -17,7 +17,6 @@ import InsightPanel from "./InsightPanel";
 import ChartWatermark from "./ChartWatermark";
 import type { LendingUtilizationEntry, DuneApiResponse } from "@/lib/types";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 
 interface ChartRow {
   label: string;
@@ -186,7 +185,7 @@ export default function LendingUtilization() {
     <div className="tui-panel relative">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Lending & Borrowing <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <span className="flex items-center gap-2"><PanelFilters /><span className="tui-panel-badge">Since Jan 2025</span></span>
+        <span className="tui-panel-badge">Since Jan 2025</span>
       </div>
       <div className="px-2 pt-2 pb-1">
         <ResponsiveContainer width="100%" height={240}>

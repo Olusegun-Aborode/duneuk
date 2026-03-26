@@ -14,7 +14,6 @@ import {
 import { CHART_COLORS } from "@/lib/constants";
 import { formatGBP, formatEUR, formatUSD, formatNative } from "@/lib/format";
 import { useCurrencyFilter, tokenMatchesCurrency } from "@/contexts/CurrencyFilterContext";
-import { PanelFilters } from "@/components/PanelFilters";
 import type { SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
 import { TokenLogo } from "@/components/TokenLogo";
@@ -115,10 +114,7 @@ export default function SupplyChart() {
     <div className="tui-panel">
       <div className="tui-panel-header">
         <span className="tui-panel-title">Supply Over Time <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
-        <div className="flex items-center gap-2">
-          <PanelFilters />
-          <TimeRangeSelector value={range} onChange={setRange} />
-        </div>
+        <TimeRangeSelector value={range} onChange={setRange} />
       </div>
 
       <div className="p-4">
