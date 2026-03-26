@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TOKEN_LOGOS, CHART_COLORS } from "@/lib/constants";
+import { assetUrl } from "@/lib/asset-prefix";
 
 interface TokenLogoProps {
   symbol: string;
@@ -18,7 +19,8 @@ export function TokenLogo({ symbol, size = 16, className = "" }: TokenLogoProps)
 
   // Strip suffixes like " (SOL)" for logo lookup
   const cleanSymbol = symbol.replace(/\s*\(.*\)$/, "");
-  const logoSrc = TOKEN_LOGOS[cleanSymbol];
+  const rawLogo = TOKEN_LOGOS[cleanSymbol];
+  const logoSrc = rawLogo ? assetUrl(rawLogo) : undefined;
   const color = (CHART_COLORS as Record<string, string>)[cleanSymbol] ?? "#888";
 
   if (!logoSrc || hasError) {

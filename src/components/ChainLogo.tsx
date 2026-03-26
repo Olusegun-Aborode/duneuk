@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CHAIN_LOGOS } from "@/lib/constants";
+import { assetUrl } from "@/lib/asset-prefix";
 
 interface ChainLogoProps {
   name: string;
@@ -17,7 +18,8 @@ export function ChainLogo({ name, size = 16, color = "#888", className = "" }: C
   const [hasError, setHasError] = useState(false);
 
   const cleanName = name.toLowerCase();
-  const logoSrc = CHAIN_LOGOS[cleanName];
+  const raw = CHAIN_LOGOS[cleanName];
+  const logoSrc = raw ? assetUrl(raw) : undefined;
 
   if (!logoSrc || hasError) {
     return (

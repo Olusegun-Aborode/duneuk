@@ -300,7 +300,6 @@ export default function MarketShareComparison() {
             selectedTokens={chartFilter.selectedTokens}
             setSelectedTokens={chartFilter.setSelectedTokens}
           />
-          <span className="tui-panel-badge">GBP vs USD vs EUR</span>
           <TimeRangeSelector value={range} onChange={setRange} />
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DEX_LOGOS, DEX_COLORS } from "@/lib/constants";
+import { assetUrl } from "@/lib/asset-prefix";
 
 interface DexLogoProps {
   name: string;
@@ -16,7 +17,8 @@ export function DexLogo({ name, size = 16, className = "" }: DexLogoProps) {
   const [hasError, setHasError] = useState(false);
 
   const cleanName = name.toLowerCase();
-  const logoSrc = DEX_LOGOS[cleanName];
+  const raw = DEX_LOGOS[cleanName];
+  const logoSrc = raw ? assetUrl(raw) : undefined;
   const color = DEX_COLORS[cleanName] ?? "#888";
 
   if (!logoSrc || hasError) {

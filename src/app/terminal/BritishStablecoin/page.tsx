@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useTransition } from "react";
 import MarketOverview from "./_components/MarketOverview";
 import SupplyLeaderboard from "./_components/SupplyLeaderboard";
 import EmailGate from "./_components/EmailGate";
@@ -127,6 +127,8 @@ function UtilisationTab() {
 
 export default function BritishStablecoinPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [, startTransition] = useTransition();
+  const switchTab = (tab: TabId) => startTransition(() => setActiveTab(tab));
 
   return (
     <CurrencyFilterProvider>
@@ -161,7 +163,7 @@ export default function BritishStablecoinPage() {
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => switchTab(tab.id)}
               className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? "text-[var(--accent-green)] border-[var(--accent-green)]"
