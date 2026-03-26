@@ -37,6 +37,7 @@ export function formatPercent(value: number | null | undefined): string {
 
 export function formatCompactUSD(value: number | null | undefined): string {
   const v = value ?? 0;
+  if (v >= 1_000_000_000_000) return `$${(v / 1_000_000_000_000).toFixed(1)}T`;
   if (v >= 1_000_000_000) return `$${(v / 1_000_000_000).toFixed(1)}B`;
   if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
   if (v >= 1_000) return `$${(v / 1_000).toFixed(1)}K`;

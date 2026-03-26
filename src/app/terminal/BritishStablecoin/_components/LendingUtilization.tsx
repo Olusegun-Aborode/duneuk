@@ -133,9 +133,18 @@ export default function LendingUtilization() {
     );
   }
 
-  // Filter out rows with zero activity
+  // Filter out rows with zero activity or bad data (negative/absurd values)
   const activeRows = data?.data?.filter(
-    (e) => (e.supply_usd ?? 0) > 0 || (e.borrow_usd ?? 0) > 0 || (e.event_count ?? 0) > 0
+    (e) => {
+      const supply = e.supply_usd ?? 0;
+      const borrow = e.borrow_usd ?? 0;
+      // Skip rows with negative values (data anomalies) or zero activity
+      if (supply < 0 || borrow < 0) return false;
+      if (supply === 0 && borrow === 0 && (e.event_count ?? 0) === 0) return false;
+      // Skip absurdly large values (> $1T = data errors)
+      if (supply > 1_000_000_000_000 || borrow > 1_000_000_000_000) return false;
+      return true;
+    }
   ) ?? [];
 
   // If no meaningful lending data exists, show insight panel
@@ -159,16 +168,19 @@ export default function LendingUtilization() {
     );
   }
 
-  const chartData: ChartRow[] = activeRows.map((e) => ({
-    label: `${e.project} / ${e.token}`,
-    supplied: e.supply_usd ?? 0,
-    borrowed: e.borrow_usd ?? 0,
-    utilization_rate: e.utilization_rate ?? 0,
-    project: e.project,
-    token: e.token,
-    suppliers: e.suppliers ?? 0,
-    borrowers: e.borrowers ?? 0,
-  }));
+  const chartData: ChartRow[] = activeRows
+    .map((e) => ({
+      label: `${e.project} / ${e.token}`,
+      supplied: e.supply_usd ?? 0,
+      borrowed: e.borrow_usd ?? 0,
+      utilization_rate: e.utilization_rate ?? 0,
+      project: e.project,
+      token: e.token,
+      suppliers: e.suppliers ?? 0,
+      borrowers: e.borrowers ?? 0,
+    }))
+    .sort((a, b) => b.supplied - a.supplied)
+    .slice(0, 8); // Top 8 for readability
 
   return (
     <div className="tui-panel relative">
