@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import Link from "next/link";
 import { formatGBP, formatEUR, formatUSD, formatPercent, formatNumber, formatNative } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
@@ -8,6 +9,8 @@ import { TokenLogo } from "@/components/TokenLogo";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import type { CurrencyFilter } from "@/contexts/CurrencyFilterContext";
 import type { LeaderboardEntry, DuneApiResponse } from "@/lib/types";
+
+const PAGE_SIZE = 10;
 
 function SkeletonRow() {
   return (
@@ -65,6 +68,11 @@ function useLeaderboardData(currency: CurrencyFilter) {
 export default function SupplyLeaderboard() {
   const chartFilter = useChartFilter();
   const { data: entries, isLoading, error, lastUpdated } = useLeaderboardData(chartFilter.currency);
+  const [page, setPage] = useState(0);
+
+  const filtered = entries.filter((e) => chartFilter.tokenMatches(e.token));
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const pageEntries = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   if (error) {
     return (
@@ -110,13 +118,14 @@ export default function SupplyLeaderboard() {
         <tbody>
           {isLoading
             ? Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
-            : entries?.map((entry, idx) => {
+            : pageEntries?.map((entry, idx) => {
+                const globalIdx = page * PAGE_SIZE + idx;
                 const meta = TOKEN_META[entry.token];
-                const isEur = ["EURC", "EURT"].includes(entry.token);
+                const isEur = !["tGBP", "GBPm", "GBPe", "GBPT", "VGBP", "eGBP"].includes(entry.token);
                 const nativeFormat = isEur ? formatEUR : formatGBP;
                 return (
                   <tr key={entry.token}>
-                    <td className="text-[#6B7280]">{idx + 1}</td>
+                    <td className="text-[#6B7280]">{globalIdx + 1}</td>
                     <td>
                       <Link
                         href={`/terminal/BritishStablecoin/${entry.token}`}
@@ -160,6 +169,46 @@ export default function SupplyLeaderboard() {
               })}
         </tbody>
       </table>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-2 border-t" style={{ borderColor: "var(--border)" }}>
+          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+            {filtered.length} tokens · Page {page + 1} of {totalPages}
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="px-2 py-0.5 text-[10px] rounded border transition-colors disabled:opacity-30"
+              style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+            >
+              ← Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className="w-5 h-5 text-[10px] rounded border transition-colors"
+                style={{
+                  borderColor: i === page ? "var(--accent-green)" : "var(--border)",
+                  color: i === page ? "var(--accent-green)" : "var(--text-muted)",
+                  fontWeight: i === page ? 700 : 400,
+                }}
+              >
+                {i + 1}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page >= totalPages - 1}
+              className="px-2 py-0.5 text-[10px] rounded border transition-colors disabled:opacity-30"
+              style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
