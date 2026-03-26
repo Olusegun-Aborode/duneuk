@@ -24,7 +24,16 @@ function normalizeEurFields(rows: Record<string, unknown>[]): Record<string, unk
 export async function GET() {
   try {
     const result = await getDuneQueryResults(EURO_QUERY_IDS.CHAIN_DISTRIBUTION);
-    const data = { ...result, data: normalizeEurFields(result.data) };
+    const normalized = normalizeEurFields(result.data);
+    // Deduplicate by blockchain+token
+    const seen = new Set<string>();
+    const deduped = normalized.filter(row => {
+      const key = `${row.blockchain}|${row.token}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const data = { ...result, data: deduped };
     return NextResponse.json(data);
   } catch (error) {
     console.error("Failed to fetch euro chain distribution:", error);

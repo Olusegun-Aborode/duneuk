@@ -24,7 +24,16 @@ function normalizeEurFields(rows: Record<string, unknown>[]): Record<string, unk
 export async function GET() {
   try {
     const result = await getDuneQueryResults(EURO_QUERY_IDS.SUPPLY_LEADERBOARD);
-    const data = { ...result, data: normalizeEurFields(result.data) };
+    const normalized = normalizeEurFields(result.data);
+    // Deduplicate by token (Dune query returns 2x rows due to subquery join)
+    const seen = new Set<string>();
+    const deduped = normalized.filter(row => {
+      const key = String(row.token ?? '');
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const data = { ...result, data: deduped };
     return NextResponse.json(data);
   } catch (error) {
     console.error("Failed to fetch euro supply leaderboard:", error);
