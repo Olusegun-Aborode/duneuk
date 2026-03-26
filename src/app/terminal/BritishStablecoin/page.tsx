@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback } from "react";
 import MarketOverview from "./_components/MarketOverview";
 import SupplyLeaderboard from "./_components/SupplyLeaderboard";
 import EmailGate from "./_components/EmailGate";
@@ -127,8 +127,18 @@ function UtilisationTab() {
 
 export default function BritishStablecoinPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
-  const [, startTransition] = useTransition();
-  const switchTab = (tab: TabId) => startTransition(() => setActiveTab(tab));
+  const [pendingTab, setPendingTab] = useState<TabId | null>(null);
+
+  // Two-frame tab switch: paint button highlight immediately, swap content next frame
+  const switchTab = useCallback((tab: TabId) => {
+    setPendingTab(tab);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setActiveTab(tab);
+        setPendingTab(null);
+      });
+    });
+  }, []);
 
   return (
     <CurrencyFilterProvider>
@@ -160,19 +170,22 @@ export default function BritishStablecoinPage() {
 
         {/* Tab nav */}
         <nav className="flex gap-0.5 border-b border-[var(--border)]">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => switchTab(tab.id)}
-              className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "text-[var(--accent-green)] border-[var(--accent-green)]"
-                  : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {TABS.map((tab) => {
+            const isActive = (pendingTab ?? activeTab) === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => switchTab(tab.id)}
+                className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
+                  isActive
+                    ? "text-[var(--accent-green)] border-[var(--accent-green)]"
+                    : "text-[var(--text-muted)] border-transparent hover:text-[var(--foreground)] hover:border-[var(--border-bright)]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Counters row */}
