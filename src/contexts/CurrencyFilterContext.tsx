@@ -74,7 +74,7 @@ export function useCurrencyFilter() {
 
 /** Token lists by currency group */
 export const GBP_TOKENS = ["tGBP", "GBPm", "GBPe", "GBPT", "VGBP", "eGBP"] as const;
-export const EUR_TOKENS = ["EURC", "EURT", "EURS", "EURA", "EURe", "EURCV", "EURI", "EUROe", "EURQ", "EUROP", "EURR", "EURAU", "PAR", "sEUR", "EURL"] as const;
+export const EUR_TOKENS = ["EURC", "EURCV", "EURI", "AEUR", "EURe", "EURR", "EURS", "EUROP", "EURm", "EURA", "VEUR", "PAR", "EURAU", "EURT", "EUROe", "sEUR", "eEUR"] as const;
 export const ALL_TOKENS = [...GBP_TOKENS, ...EUR_TOKENS] as const;
 
 /** Helper to get the token list for a currency filter */
