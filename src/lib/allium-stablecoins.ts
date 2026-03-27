@@ -53,20 +53,30 @@ async function cachedQuery<T>(key: string, sql: string, limit?: number): Promise
   return rows;
 }
 
+// Known EUR tokens to filter against (avoids unknown/spam tokens)
+const KNOWN_EUR_SYMBOLS = [
+  "eurc", "eurt", "eurs", "eura", "eure", "eurcv", "euri",
+  "europ", "eurr", "eurau", "eurm", "veur", "par", "euroe",
+  "seur", "eeur", "aeur",
+];
+
 /**
  * EUR Transfer Volume — aggregated by chain + token (last 30 days)
+ * Filters to known tokens only and uses entity-adjusted volume
  */
 export async function getEurTransferVolume() {
+  const tokenList = KNOWN_EUR_SYMBOLS.map((s) => `'${s}'`).join(",");
   const sql = `
     SELECT
       chain,
       token_symbol AS token,
-      SUM(transfer_volume) AS volume_eur,
-      SUM(transfer_volume_usd) AS volume_usd,
-      SUM(transfer_count) AS num_transfers,
+      SUM(entity_adjusted_single_direction_max_transfer_volume) AS volume_eur,
+      SUM(entity_adjusted_single_direction_max_transfer_volume_usd) AS volume_usd,
+      SUM(transfer_tx_count) AS num_transfers,
       COUNT(DISTINCT activity_date) AS active_days
     FROM crosschain.metrics.stablecoin_volume
     WHERE currency = 'eur'
+      AND LOWER(token_symbol) IN (${tokenList})
       AND activity_date >= CURRENT_DATE - INTERVAL '30 days'
       AND transfer_volume > 0
     GROUP BY chain, token_symbol
@@ -76,7 +86,7 @@ export async function getEurTransferVolume() {
   const rows = await cachedQuery<{
     chain: string; token: string; volume_eur: number;
     volume_usd: number; num_transfers: string; active_days: string;
-  }>("eur-transfer-volume", sql, 100);
+  }>("eur-transfer-volume-v2", sql, 100);
 
   return {
     data: rows.map((r) => ({
@@ -85,7 +95,7 @@ export async function getEurTransferVolume() {
       num_transfers: parseInt(r.num_transfers ?? "0", 10),
       volume_gbp: Math.round((r.volume_eur ?? 0) * 100) / 100, // normalized field
       volume_usd: Math.round((r.volume_usd ?? 0) * 100) / 100,
-      unique_senders: 0, // Not available in metrics table
+      unique_senders: 0,
       unique_receivers: 0,
     })),
     lastUpdated: new Date().toISOString(),
@@ -97,6 +107,7 @@ export async function getEurTransferVolume() {
  * EUR Daily Active Users — unique transactors per day per token
  */
 export async function getEurDailyActiveUsers() {
+  const tokenList = KNOWN_EUR_SYMBOLS.map((s) => `'${s}'`).join(",");
   const sql = `
     SELECT
       CAST(activity_date AS VARCHAR) AS day,
@@ -104,6 +115,7 @@ export async function getEurDailyActiveUsers() {
       SUM(transfer_tx_count) AS active_addresses
     FROM crosschain.metrics.stablecoin_volume
     WHERE currency = 'eur'
+      AND LOWER(token_symbol) IN (${tokenList})
       AND activity_date >= CURRENT_DATE - INTERVAL '180 days'
       AND transfer_tx_count > 0
     GROUP BY activity_date, token_symbol

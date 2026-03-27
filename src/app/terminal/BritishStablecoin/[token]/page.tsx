@@ -11,10 +11,11 @@ import {
   BarChart, Bar,
 } from "recharts";
 import { TOKEN_META, DEX_COLORS } from "@/lib/constants";
+import { GBP_TOKENS } from "@/contexts/CurrencyFilterContext";
 import { TokenLogo } from "@/components/TokenLogo";
 import { DexLogo } from "@/components/DexLogo";
 import {
-  formatGBP, formatNumber, formatPercent, formatCompactUSD,
+  formatGBP, formatEUR, formatNumber, formatPercent, formatCompactUSD,
   formatAddress, formatUSD,
 } from "@/lib/format";
 import ChartWatermark from "../_components/ChartWatermark";
@@ -55,11 +56,18 @@ export default function TokenDetailPage() {
   const [dauRange, setDauRange] = useState<TimeRange>("90d");
   const [dexRange, setDexRange] = useState<TimeRange>("90d");
 
+  // Determine API base based on token type
+  const isGbpToken = (GBP_TOKENS as readonly string[]).includes(token);
+  const apiBase = isGbpToken
+    ? "/api/terminal/british-stablecoin"
+    : "/api/terminal/euro-stablecoin";
+  const formatNativeToken = isGbpToken ? formatGBP : formatEUR;
+
   // Leaderboard (for stats)
   const { data: leaderboardData } = useQuery<DuneApiResponse<LeaderboardEntry>>({
-    queryKey: ["supply-leaderboard"],
+    queryKey: ["supply-leaderboard", apiBase],
     queryFn: async () => {
-      const res = await fetch("/api/terminal/british-stablecoin/leaderboard");
+      const res = await fetch(`${apiBase}/leaderboard`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -67,9 +75,9 @@ export default function TokenDetailPage() {
 
   // Supply history
   const { data: supplyData } = useQuery<DuneApiResponse<SupplyHistoryEntry>>({
-    queryKey: ["supply-history"],
+    queryKey: ["supply-history", apiBase],
     queryFn: async () => {
-      const res = await fetch("/api/terminal/british-stablecoin/supply-history");
+      const res = await fetch(`${apiBase}/supply-history`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -77,9 +85,9 @@ export default function TokenDetailPage() {
 
   // Transfer volume
   const { data: volumeData } = useQuery<DuneApiResponse<TransferVolumeEntry>>({
-    queryKey: ["transfer-volume"],
+    queryKey: ["transfer-volume", apiBase],
     queryFn: async () => {
-      const res = await fetch("/api/terminal/british-stablecoin/transfer-volume");
+      const res = await fetch(`${apiBase}/transfer-volume`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -87,9 +95,9 @@ export default function TokenDetailPage() {
 
   // Chain distribution
   const { data: chainData } = useQuery<DuneApiResponse<ChainDistributionEntry>>({
-    queryKey: ["chain-distribution"],
+    queryKey: ["chain-distribution", apiBase],
     queryFn: async () => {
-      const res = await fetch("/api/terminal/british-stablecoin/chain-distribution");
+      const res = await fetch(`${apiBase}/chain-distribution`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -97,9 +105,9 @@ export default function TokenDetailPage() {
 
   // Top holders
   const { data: holderData } = useQuery<DuneApiResponse<TopHolderEntry>>({
-    queryKey: ["top-holders"],
+    queryKey: ["top-holders", apiBase],
     queryFn: async () => {
-      const res = await fetch("/api/terminal/british-stablecoin/top-holders");
+      const res = await fetch(`${apiBase}/top-holders`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -107,9 +115,9 @@ export default function TokenDetailPage() {
 
   // DEX pools
   const { data: poolData } = useQuery<DuneApiResponse<DexPoolEntry>>({
-    queryKey: ["dex-pools"],
+    queryKey: ["dex-pools", apiBase],
     queryFn: async () => {
-      const res = await fetch("/api/terminal/british-stablecoin/dex-pools");
+      const res = await fetch(`${apiBase}/dex-pools`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -117,9 +125,9 @@ export default function TokenDetailPage() {
 
   // DEX volume (weekly)
   const { data: dexVolumeData } = useQuery<DuneApiResponse<DexVolumeEntry>>({
-    queryKey: ["dex-volume"],
+    queryKey: ["dex-volume", apiBase],
     queryFn: async () => {
-      const res = await fetch("/api/terminal/british-stablecoin/dex-volume");
+      const res = await fetch(`${apiBase}/dex-volume`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -127,9 +135,9 @@ export default function TokenDetailPage() {
 
   // Daily active users
   const { data: dauData } = useQuery<DuneApiResponse<DailyActiveUsersEntry>>({
-    queryKey: ["daily-active-users"],
+    queryKey: ["daily-active-users", apiBase],
     queryFn: async () => {
-      const res = await fetch("/api/terminal/british-stablecoin/active-users");
+      const res = await fetch(`${apiBase}/active-users`);
       if (!res.ok) throw new Error("Failed");
       return res.json();
     },
@@ -273,7 +281,7 @@ export default function TokenDetailPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="tui-panel p-3">
           <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Supply</p>
-          <p className="text-base font-bold" style={{ color }}>{stats ? formatGBP(stats.supply_gbp) : "—"}</p>
+          <p className="text-base font-bold" style={{ color }}>{stats ? formatNativeToken(stats.supply_gbp) : "—"}</p>
           <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{stats ? formatUSD(stats.supply_usd) : ""}</p>
         </div>
         <div className="tui-panel p-3">
@@ -283,7 +291,7 @@ export default function TokenDetailPage() {
         </div>
         <div className="tui-panel p-3">
           <p className="text-[10px] uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>30d Volume</p>
-          <p className="text-base font-bold" style={{ color }}>{totalVolume ? formatGBP(totalVolume) : "—"}</p>
+          <p className="text-base font-bold" style={{ color }}>{totalVolume ? formatNativeToken(totalVolume) : "—"}</p>
           <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>{totalTransfers ? `${formatNumber(totalTransfers)} transfers` : ""}</p>
         </div>
         <div className="tui-panel p-3">
@@ -355,10 +363,10 @@ export default function TokenDetailPage() {
               <AreaChart data={supplyChart}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                 <XAxis dataKey="day" tickFormatter={formatDateAxis} tick={{ fill: "#6B7280", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={(v: number) => formatGBP(v)} tick={{ fill: "#6B7280", fontSize: 10 }} axisLine={false} tickLine={false} width={70} />
+                <YAxis tickFormatter={(v: number) => formatNativeToken(v)} tick={{ fill: "#6B7280", fontSize: 10 }} axisLine={false} tickLine={false} width={70} />
                 <Tooltip
                   contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: 11, fontFamily: "monospace" }}
-                  formatter={(value) => [formatGBP(Number(value ?? 0))]}
+                  formatter={(value) => [formatNativeToken(Number(value ?? 0))]}
                 />
                 <Area type="monotone" dataKey="supply_gbp" stroke={color} fill={color} fillOpacity={0.1} strokeWidth={2} />
               </AreaChart>
@@ -414,7 +422,7 @@ export default function TokenDetailPage() {
                       <Cell key={c.blockchain} fill={CHAIN_COLORS[c.blockchain] ?? "#6B7280"} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: 11, fontFamily: "monospace" }} formatter={(value) => [formatGBP(Number(value ?? 0))]} />
+                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: 11, fontFamily: "monospace" }} formatter={(value) => [formatNativeToken(Number(value ?? 0))]} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 justify-center">
@@ -448,7 +456,7 @@ export default function TokenDetailPage() {
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: 11, fontFamily: "monospace" }} formatter={(value) => [formatGBP(Number(value ?? 0))]} />
+                  <Tooltip contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "4px", fontSize: 11, fontFamily: "monospace" }} formatter={(value) => [formatNativeToken(Number(value ?? 0))]} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 justify-center">
@@ -534,7 +542,7 @@ export default function TokenDetailPage() {
                 <tr key={`${v.blockchain}-${i}`}>
                   <td className="capitalize">{v.blockchain}</td>
                   <td className="text-right">{formatNumber(v.num_transfers)}</td>
-                  <td className="text-right font-bold">{formatGBP(v.volume_gbp)}</td>
+                  <td className="text-right font-bold">{formatNativeToken(v.volume_gbp)}</td>
                   <td className="text-right" style={{ color: "var(--text-muted)" }}>{formatNumber(v.unique_senders)}</td>
                   <td className="text-right" style={{ color: "var(--text-muted)" }}>{formatNumber(v.unique_receivers)}</td>
                 </tr>
@@ -608,7 +616,7 @@ export default function TokenDetailPage() {
                   <td style={{ color: "var(--text-muted)" }}>{i + 1}</td>
                   <td className="capitalize">{h.blockchain}</td>
                   <td className="text-xs" style={{ color: "var(--text-muted)" }}>{formatAddress(h.address)}</td>
-                  <td className="text-right font-bold">{formatGBP(h.balance_gbp)}</td>
+                  <td className="text-right font-bold">{formatNativeToken(h.balance_gbp)}</td>
                   <td className="text-right" style={{ color: "var(--text-muted)" }}>{formatPercent(h.pct_of_supply)}</td>
                   <td className="text-right w-20">
                     <div className="tui-progress">
