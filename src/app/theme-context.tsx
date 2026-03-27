@@ -13,9 +13,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
-    // Force dark mode — no toggle
-    setTheme("dark");
-    localStorage.setItem("duneuk-theme", "dark");
+    // Force light mode — no toggle
+    setTheme("light");
+    localStorage.setItem("duneuk-theme", "light");
   }, []);
 
   useEffect(() => {
