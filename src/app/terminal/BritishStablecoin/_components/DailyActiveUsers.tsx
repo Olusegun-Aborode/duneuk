@@ -137,12 +137,15 @@ export default function DailyActiveUsers() {
       <div className="p-4">
         {/* Token legend */}
         <div className="flex flex-wrap gap-3 mb-3">
-          {tokens.map((token) => (
+          {tokens.slice(0, 6).map((token) => (
             <span key={token} className="flex items-center text-[10px] text-[#6B7280]">
               <TokenLogo symbol={token} size={12} />
               {token}
             </span>
           ))}
+          {tokens.length > 6 && (
+            <span className="text-[10px] text-[#6B7280]">+{tokens.length - 6} more</span>
+          )}
         </div>
 
         {isLoading ? (

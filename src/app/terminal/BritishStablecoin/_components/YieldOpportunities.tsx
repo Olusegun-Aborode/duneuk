@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatCompactUSD, formatNumber } from "@/lib/format";
 import { TOKEN_META, DEX_COLORS } from "@/lib/constants";
 import { DexLogo } from "@/components/DexLogo";
@@ -9,9 +9,9 @@ import { ChainLogo } from "@/components/ChainLogo";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { DexPoolEntry, DuneApiResponse } from "@/lib/types";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
-import Link from "next/link";
 
 const DEFAULT_VISIBLE = 9;
+const VISIBLE_INCREMENT = 9;
 
 function SkeletonCard() {
   return (
@@ -24,6 +24,7 @@ function SkeletonCard() {
 }
 
 export default function YieldOpportunities() {
+  const [visibleCount, setVisibleCount] = useState(DEFAULT_VISIBLE);
   const chartFilter = useChartFilter();
   const showGbp = chartFilter.currency === "GBP" || chartFilter.currency === "ALL";
   const showEur = chartFilter.currency === "EUR" || chartFilter.currency === "ALL";
@@ -85,7 +86,7 @@ export default function YieldOpportunities() {
     (a, b) => (b.volume_usd_30d ?? 0) - (a.volume_usd_30d ?? 0)
   );
   const maxVolume = sorted.length > 0 ? sorted[0].volume_usd_30d ?? 1 : 1;
-  const visible = sorted.slice(0, DEFAULT_VISIBLE);
+  const visible = sorted.slice(0, visibleCount);
 
   return (
     <div className="tui-panel">
@@ -176,14 +177,24 @@ export default function YieldOpportunities() {
               })}
             </div>
 
-            {sorted.length > DEFAULT_VISIBLE && (
+            {sorted.length > visibleCount && (
               <div className="flex justify-center mt-3">
-                <Link
-                  href="/terminal/BritishStablecoin/pools"
+                <button
+                  onClick={() => setVisibleCount((prev) => Math.min(prev + VISIBLE_INCREMENT, sorted.length))}
                   className="text-[11px] text-[#5B7FFF] hover:text-[#7B9FFF] transition-colors cursor-pointer"
                 >
-                  View all {sorted.length} pools &rarr;
-                </Link>
+                  Show more ({sorted.length - visibleCount} remaining) &darr;
+                </button>
+              </div>
+            )}
+            {visibleCount > DEFAULT_VISIBLE && (
+              <div className="flex justify-center mt-1">
+                <button
+                  onClick={() => setVisibleCount(DEFAULT_VISIBLE)}
+                  className="text-[11px] text-[var(--text-muted)] hover:text-[#5B7FFF] transition-colors cursor-pointer"
+                >
+                  Show less &uarr;
+                </button>
               </div>
             )}
           </>

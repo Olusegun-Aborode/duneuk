@@ -52,9 +52,15 @@ function useLeaderboardData(currency: CurrencyFilter) {
   if (showGbp && gbp.data?.data) entries.push(...gbp.data.data);
   if (showEur && eur.data?.data) entries.push(...eur.data.data);
 
-  // Re-sort by USD supply when in ALL mode
+  // Re-sort by USD supply when in ALL mode and recalculate share against combined total
   if (currency === "ALL") {
     entries.sort((a, b) => b.supply_usd - a.supply_usd);
+    const totalUsd = entries.reduce((sum, e) => sum + (e.supply_usd ?? 0), 0);
+    entries.forEach(e => {
+      if (totalUsd > 0) {
+        e.market_share_pct = Math.round((e.supply_usd / totalUsd) * 1000) / 10;
+      }
+    });
   }
 
   return {

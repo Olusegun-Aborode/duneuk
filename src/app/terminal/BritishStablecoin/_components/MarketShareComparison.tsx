@@ -362,24 +362,22 @@ export default function MarketShareComparison() {
                       String(name),
                     ]}
                   />
-                  {showGbp && (
-                    <Area
-                      type="monotone"
-                      dataKey="GBP"
-                      stackId="1"
-                      stroke={GROUP_COLORS.GBP}
-                      fill={GROUP_COLORS.GBP}
-                      fillOpacity={0.15}
-                      strokeWidth={1.5}
-                    />
-                  )}
                   {showEur && (
                     <Area
                       type="monotone"
                       dataKey="EUR"
-                      stackId="1"
                       stroke={GROUP_COLORS.EUR}
                       fill={GROUP_COLORS.EUR}
+                      fillOpacity={0.15}
+                      strokeWidth={1.5}
+                    />
+                  )}
+                  {showGbp && (
+                    <Area
+                      type="monotone"
+                      dataKey="GBP"
+                      stroke={GROUP_COLORS.GBP}
+                      fill={GROUP_COLORS.GBP}
                       fillOpacity={0.15}
                       strokeWidth={1.5}
                     />

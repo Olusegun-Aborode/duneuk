@@ -71,7 +71,15 @@ export default function TopHolders() {
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
     ];
-    return all
+    // Deduplicate by address+token
+    const seen = new Set<string>();
+    const deduped = all.filter((entry) => {
+      const key = `${entry.address}|${entry.token}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    return deduped
       .filter((r) => chartFilter.tokenMatches(r.token))
       .sort((a, b) => (b.balance_usd ?? 0) - (a.balance_usd ?? 0));
   }, [gbpData, eurData, chartFilter, showGbp, showEur]);

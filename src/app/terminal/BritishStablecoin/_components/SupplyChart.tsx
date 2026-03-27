@@ -12,7 +12,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { CHART_COLORS } from "@/lib/constants";
-import { formatGBP, formatEUR, formatUSD, formatNative } from "@/lib/format";
+import { formatGBP, formatEUR, formatUSD, formatNative, formatCompactUSD } from "@/lib/format";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import type { SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";
@@ -133,12 +133,15 @@ export default function SupplyChart() {
       <div className="p-4">
         {/* Token legend */}
         <div className="flex flex-wrap gap-3 mb-3">
-          {tokens.map((token) => (
+          {tokens.slice(0, 6).map((token) => (
             <span key={token} className="flex items-center text-[10px] text-[#6B7280]">
               <TokenLogo symbol={token} size={12} />
               {token}
             </span>
           ))}
+          {tokens.length > 6 && (
+            <span className="text-[10px] text-[#6B7280]">+{tokens.length - 6} more</span>
+          )}
         </div>
 
         {isLoading ? (
@@ -161,7 +164,7 @@ export default function SupplyChart() {
                 tickLine={false}
               />
               <YAxis
-                tickFormatter={(v: number) => formatNative(v, chartFilter.currency)}
+                tickFormatter={(v: number) => formatCompactUSD(v)}
                 tick={{ fill: "#6B7280", fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}

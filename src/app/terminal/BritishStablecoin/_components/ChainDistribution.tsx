@@ -142,7 +142,7 @@ export default function ChainDistribution() {
   return (
     <div className="tui-panel">
       <div className="tui-panel-header">
-        <span className="tui-panel-title">Chain Distribution <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[Dune]</span></span>
+        <span className="tui-panel-title">Chain Distribution <span className="text-[9px] text-[#5B7FFF] font-normal ml-1">[{chartFilter.currency === "EUR" ? "DefiLlama" : chartFilter.currency === "ALL" ? "Dune + DefiLlama" : "Dune"}]</span></span>
         <div className="flex items-center gap-2">
           <ChartFilter
             currency={chartFilter.currency}

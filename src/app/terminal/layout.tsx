@@ -62,8 +62,7 @@ export default function TerminalLayout({
         </div>
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline">Cache: 6h</span>
-          <span className="hidden sm:inline">Queries: 12</span>
-          <span>Powered by Dune + Allium</span>
+          <span>Powered by DefiLlama + Dune + Allium</span>
         </div>
       </div>
     </div>

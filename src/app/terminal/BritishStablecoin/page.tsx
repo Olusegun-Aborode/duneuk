@@ -147,8 +147,7 @@ export default function BritishStablecoinPage() {
               </h1>
             </div>
             <p className="text-[var(--text-muted)] text-[11px] mt-0.5">
-              Real-time supply, volume and holder data &middot; 8 tokens &middot;
-              GBP &amp; EUR &middot; 15+ chain deployments
+              GBP &amp; EUR stablecoins &middot; Real-time supply, volume and holder data
             </p>
           </div>
           <div className="flex items-center gap-3">
