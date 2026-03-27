@@ -26,6 +26,19 @@ export const EUR_STABLECOIN_IDS: Record<string, { id: number; issuer: string; me
   sEUR:  { id: 53,  issuer: "Synthetix", mechanism: "crypto-backed" },
 };
 
+// Map DefiLlama symbols to our canonical names (case-sensitive)
+const SYMBOL_NORMALIZE: Record<string, string> = {
+  EURE: "EURe",
+  EURM: "EURm",
+  EUROE: "EUROe",
+  SEUR: "sEUR",
+  EEUR: "eEUR",
+};
+
+function normalizeSymbol(sym: string): string {
+  return SYMBOL_NORMALIZE[sym] ?? SYMBOL_NORMALIZE[sym.toUpperCase()] ?? sym;
+}
+
 // Cache in memory (server-side, lasts per serverless invocation)
 const cache: Record<string, { data: unknown; ts: number }> = {};
 const CACHE_TTL = 30 * 60 * 1000; // 30 min
@@ -120,9 +133,10 @@ export async function getEurLeaderboard() {
   const rows = stables
     .map((s) => {
       const supplyEur = s.circulating?.peggedEUR ?? 0;
-      const meta = EUR_STABLECOIN_IDS[s.symbol];
+      const sym = normalizeSymbol(s.symbol);
+      const meta = EUR_STABLECOIN_IDS[sym];
       return {
-        token: s.symbol,
+        token: sym,
         issuer: meta?.issuer ?? s.name,
         num_chains: Object.keys(s.chainCirculating ?? {}).length,
         supply_gbp: Math.round(supplyEur * 100) / 100, // normalized field name
@@ -174,7 +188,7 @@ export async function getEurSupplyHistory() {
           if (supply > 100) {
             rows.push({
               day,
-              token: token.symbol,
+              token: normalizeSymbol(token.symbol),
               supply_gbp: Math.round(supply * 100) / 100, // normalized
               supply_usd: Math.round(supply * eurUsdRate * 100) / 100,
             });
@@ -214,7 +228,7 @@ export async function getEurChainDistribution() {
       if (supply > 100) {
         rows.push({
           blockchain: chain.toLowerCase().replace(/ /g, "_"),
-          token: s.symbol,
+          token: normalizeSymbol(s.symbol),
           supply_gbp: Math.round(supply * 100) / 100, // normalized
           supply_usd: Math.round(supply * eurUsdRate * 100) / 100,
           share_pct: totalSupply > 0 ? Math.round(supply / totalSupply * 1000) / 10 : 0,
@@ -253,7 +267,7 @@ export async function getEurMarketShare() {
     const rate = s.price ?? 1.08;
     rows.push({
       currency_group: "EUR",
-      symbol: s.symbol,
+      symbol: normalizeSymbol(s.symbol),
       total_supply: Math.round(supply * 100) / 100,
       total_supply_usd: Math.round(supply * rate * 100) / 100,
     });

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatGBP, formatEUR, formatUSD, formatPercent, formatNumber, formatNative } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
@@ -72,6 +73,7 @@ function useLeaderboardData(currency: CurrencyFilter) {
 }
 
 export default function SupplyLeaderboard() {
+  const router = useRouter();
   const chartFilter = useChartFilter();
   const { data: entries, isLoading, error, lastUpdated } = useLeaderboardData(chartFilter.currency);
   const [page, setPage] = useState(0);
@@ -130,13 +132,14 @@ export default function SupplyLeaderboard() {
                 const isEur = !["tGBP", "GBPm", "GBPe", "GBPT", "VGBP", "eGBP"].includes(entry.token);
                 const nativeFormat = isEur ? formatEUR : formatGBP;
                 return (
-                  <tr key={entry.token}>
+                  <tr
+                    key={entry.token}
+                    onClick={() => router.push(`/terminal/BritishStablecoin/${entry.token}`)}
+                    className="cursor-pointer hover:bg-[var(--border)] transition-colors"
+                  >
                     <td className="text-[#6B7280]">{globalIdx + 1}</td>
                     <td>
-                      <Link
-                        href={`/terminal/BritishStablecoin/${entry.token}`}
-                        className="flex items-center hover:underline"
-                      >
+                      <span className="flex items-center">
                         <TokenLogo symbol={entry.token} size={16} />
                         <span
                           className="font-bold"
@@ -144,7 +147,7 @@ export default function SupplyLeaderboard() {
                         >
                           {entry.token}
                         </span>
-                      </Link>
+                      </span>
                     </td>
                     <td className="text-[#6B7280]">{entry.issuer}</td>
                     <td>{formatNumber(entry.num_chains)}</td>
