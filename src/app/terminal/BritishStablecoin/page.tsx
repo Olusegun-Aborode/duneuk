@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo, useRef } from "react";
 import MarketOverview from "./_components/MarketOverview";
 import SupplyLeaderboard from "./_components/SupplyLeaderboard";
 import EmailGate from "./_components/EmailGate";
@@ -76,7 +76,7 @@ function SectionDivider({ id, label }: { id: string; label: string }) {
   );
 }
 
-function OverviewTab() {
+const OverviewTab = memo(function OverviewTab() {
   return (
     <div className="space-y-4">
       <SectionNav sections={SECTIONS.overview} />
@@ -103,9 +103,9 @@ function OverviewTab() {
       </div>
     </div>
   );
-}
+});
 
-function UtilisationTab() {
+const UtilisationTab = memo(function UtilisationTab() {
   return (
     <div className="space-y-4">
       <SectionNav sections={SECTIONS.utilisation} />
@@ -123,10 +123,23 @@ function UtilisationTab() {
       <YieldOpportunities />
     </div>
   );
-}
+});
+
+const MemoMethodology = memo(Methodology);
 
 export default function BritishStablecoinPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const overviewRef = useRef<HTMLDivElement>(null);
+  const utilisationRef = useRef<HTMLDivElement>(null);
+  const methodologyRef = useRef<HTMLDivElement>(null);
+
+  // DOM-only tab switch — bypasses React rendering entirely
+  const switchTab = useCallback((tab: TabId) => {
+    if (overviewRef.current) overviewRef.current.style.display = tab === "overview" ? "block" : "none";
+    if (utilisationRef.current) utilisationRef.current.style.display = tab === "utilisation" ? "block" : "none";
+    if (methodologyRef.current) methodologyRef.current.style.display = tab === "methodology" ? "block" : "none";
+    setActiveTab(tab);
+  }, []);
 
   return (
     <CurrencyFilterProvider>
@@ -160,7 +173,7 @@ export default function BritishStablecoinPage() {
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => switchTab(tab.id)}
               className={`text-[11px] uppercase tracking-wider px-4 py-2 border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? "text-[var(--accent-green)] border-[var(--accent-green)]"
@@ -175,16 +188,16 @@ export default function BritishStablecoinPage() {
         {/* Counters row */}
         <MarketOverview />
 
-        {/* Gated content — all tabs stay mounted, hidden via CSS for instant switching */}
+        {/* Gated content — all tabs stay mounted, switched via DOM refs (no React re-render) */}
         <EmailGate>
-          <div style={{ display: activeTab === "overview" ? "block" : "none" }}>
+          <div ref={overviewRef} style={{ display: "block" }}>
             <OverviewTab />
           </div>
-          <div style={{ display: activeTab === "utilisation" ? "block" : "none" }}>
+          <div ref={utilisationRef} style={{ display: "none" }}>
             <UtilisationTab />
           </div>
-          <div style={{ display: activeTab === "methodology" ? "block" : "none" }}>
-            <Methodology />
+          <div ref={methodologyRef} style={{ display: "none" }}>
+            <MemoMethodology />
           </div>
         </EmailGate>
 
