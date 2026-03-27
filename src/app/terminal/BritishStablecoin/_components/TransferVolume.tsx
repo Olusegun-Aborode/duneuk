@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { formatNative, formatNumber } from "@/lib/format";
+import { formatNative, formatNumber, formatCompactUSD } from "@/lib/format";
 import { TOKEN_META, CHART_COLORS } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { TransferVolumeEntry, DuneApiResponse } from "@/lib/types";
@@ -84,6 +84,8 @@ export default function TransferVolume() {
     return { data: all.filter((r) => chartFilter.tokenMatches(r.token)) };
   }, [gbpData, eurData, chartFilter, showGbp, showEur]);
 
+  const MAX_CHAINS = 6;
+
   const { chartData, tokens } = useMemo(() => {
     if (!data.data?.length) return { chartData: [], tokens: [] };
     const byChain: Record<string, ChainRow> = {};
@@ -109,6 +111,29 @@ export default function TransferVolume() {
     const sorted = Object.values(byChain).sort(
       (a, b) => b.total_volume - a.total_volume
     );
+
+    // Limit to top N chains, group rest as "Others"
+    if (sorted.length > MAX_CHAINS) {
+      const top = sorted.slice(0, MAX_CHAINS);
+      const rest = sorted.slice(MAX_CHAINS);
+      const others: ChainRow = {
+        blockchain: `others (${rest.length})`,
+        total_volume: 0,
+        num_transfers: 0,
+        unique_senders: 0,
+        unique_receivers: 0,
+      };
+      for (const r of rest) {
+        others.total_volume += r.total_volume;
+        others.num_transfers += r.num_transfers;
+        for (const t of tokenSet) {
+          others[t] = ((others[t] as number) || 0) + ((r[t] as number) || 0);
+        }
+      }
+      top.push(others);
+      return { chartData: top, tokens: [...tokenSet] };
+    }
+
     return { chartData: sorted, tokens: [...tokenSet] };
   }, [data]);
 
@@ -149,14 +174,17 @@ export default function TransferVolume() {
       </div>
 
       <div className="p-4">
-        {/* Token legend */}
+        {/* Token legend — top 6 */}
         <div className="flex flex-wrap gap-3 mb-3">
-          {tokens.map((token) => (
-            <span key={token} className="flex items-center text-[10px] text-[#6B7280]">
+          {tokens.slice(0, 6).map((token) => (
+            <span key={token} className="flex items-center text-[10px]" style={{ color: "var(--text-muted)" }}>
               <TokenLogo symbol={token} size={12} />
               {token}
             </span>
           ))}
+          {tokens.length > 6 && (
+            <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>+{tokens.length - 6} more</span>
+          )}
         </div>
 
         {isLoading ? (
@@ -166,7 +194,7 @@ export default function TransferVolume() {
             <ChartWatermark />
             <ResponsiveContainer
               width="100%"
-              height={Math.max(chartData.length * 45, 200)}
+              height={Math.max(chartData.length * 42, 200)}
             >
               <BarChart layout="vertical" data={chartData}>
                 <CartesianGrid
@@ -176,7 +204,7 @@ export default function TransferVolume() {
                 />
                 <XAxis
                   type="number"
-                  tickFormatter={(v: number) => formatNative(v, chartFilter.currency)}
+                  tickFormatter={(v: number) => formatCompactUSD(v)}
                   tick={{ fill: "#6B7280", fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
@@ -251,6 +279,7 @@ export default function TransferVolume() {
       </div>
 
       {showTable && !isLoading && (
+        <div className="max-h-[400px] overflow-y-auto border-t" style={{ borderColor: "var(--border)" }}>
         <table className="data-table">
           <thead>
             <tr>
@@ -296,6 +325,7 @@ export default function TransferVolume() {
             })}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );
