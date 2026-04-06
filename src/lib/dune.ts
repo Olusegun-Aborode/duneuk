@@ -19,3 +19,13 @@ export async function getDuneQueryResults(queryId: number) {
     lastUpdated: result.lastUpdated,
   };
 }
+
+/** Clear cached results for a single query. Forces the next call to refetch. */
+export function invalidateDuneQuery(queryId: number) {
+  dune.invalidate(queryId);
+}
+
+/** Clear all cached Dune results. */
+export function clearDuneCache() {
+  dune.clearCache();
+}

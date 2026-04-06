@@ -13,7 +13,7 @@ interface CexListing {
 }
 
 const CEX_DATA: CexListing[] = [
-  { token: "tGBP", exchange: "Kraken", pairs: "USD, EUR, GBP, ETH, USDT, CAD", status: "active", notes: "Listed Nov 2025. FCA-registered issuer (BCP Technologies)." },
+  { token: "tGBP", exchange: "Kraken", pairs: "USD, EUR, GBP, ETH, USDT, CAD", status: "active", notes: "Listed Nov 2025. FCA-registered issuer (BCP Technologies Ltd)." },
   { token: "VGBP", exchange: "Coinbase", pairs: "USD, EUR, CAD", status: "active", notes: "Licensed under Liechtenstein Blockchain Act (VNX)." },
   { token: "GBPT", exchange: "CEX.IO", pairs: "GBP, USD", status: "active", notes: "Fireblocks integrated (1,300+ institutions). KPMG audited." },
   { token: "GBPT", exchange: "Gate.io", pairs: "ETH, USDT, BTC", status: "historical", notes: "Historical listing. Keyrock as market maker." },

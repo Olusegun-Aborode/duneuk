@@ -3,8 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { formatGBP, formatEUR, formatUSD, formatPercent, formatNumber, formatNative } from "@/lib/format";
+import { formatGBP, formatEUR, formatUSD, formatPercent, formatNumber } from "@/lib/format";
 import { TOKEN_META } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
@@ -75,7 +74,7 @@ function useLeaderboardData(currency: CurrencyFilter) {
 export default function SupplyLeaderboard() {
   const router = useRouter();
   const chartFilter = useChartFilter();
-  const { data: entries, isLoading, error, lastUpdated } = useLeaderboardData(chartFilter.currency);
+  const { data: entries, isLoading, error } = useLeaderboardData(chartFilter.currency);
   const [page, setPage] = useState(0);
 
   const filtered = entries.filter((e) => chartFilter.tokenMatches(e.token));
@@ -149,7 +148,7 @@ export default function SupplyLeaderboard() {
                         </span>
                       </span>
                     </td>
-                    <td className="text-[#6B7280]">{entry.issuer}</td>
+                    <td className="text-[#6B7280]">{meta?.issuer ?? entry.issuer}</td>
                     <td>{formatNumber(entry.num_chains)}</td>
                     <td className="text-right font-bold">
                       {chartFilter.currency === "ALL" ? formatUSD(entry.supply_usd) : nativeFormat(entry.supply_gbp)}

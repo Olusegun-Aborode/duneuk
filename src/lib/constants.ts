@@ -130,7 +130,7 @@ export interface TokenMeta {
 
 export const TOKEN_META: Record<string, TokenMeta> = {
   tGBP: {
-    issuer: "BCP Technologies",
+    issuer: "BCP Technologies Ltd",
     color: CHART_COLORS.tGBP,
     regulation: "FCA-registered (UK)",
     backing: "Cash + short-dated UK government bonds",

@@ -101,4 +101,6 @@ export interface DexPoolEntry {
 export interface DuneApiResponse<T> {
   data: T[];
   lastUpdated: string;
+  /** Optional unique chain list (set on the market-overview endpoints). */
+  chains?: string[];
 }

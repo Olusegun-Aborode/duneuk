@@ -46,6 +46,8 @@ function formatWeekAxis(dateStr: string) {
   return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
+const HOLDER_COLORS = ["#00FF88", "#5B7FFF", "#FF6B35", "#B44AFF", "#00D4FF", "#FFD700", "#FF4444", "#9945FF", "#35D07F", "#F0B90B"];
+
 export default function TokenDetailPage() {
   const params = useParams();
   const token = params.token as string;
@@ -223,7 +225,6 @@ export default function TokenDetailPage() {
   }, [holders]);
 
   // Holder distribution pie data
-  const HOLDER_COLORS = ["#00FF88", "#5B7FFF", "#FF6B35", "#B44AFF", "#00D4FF", "#FFD700", "#FF4444", "#9945FF", "#35D07F", "#F0B90B"];
   const pieHolders = useMemo(() => {
     if (holders.length === 0) return [];
     const top = holders.slice(0, 5);

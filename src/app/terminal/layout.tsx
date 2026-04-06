@@ -20,8 +20,24 @@ export default function TerminalLayout({
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-[10px] hidden sm:inline" style={{ color: "var(--text-muted)" }}>
-              Data by DefiLlama + Dune + Allium
+            <span
+              className="group relative text-[10px] hidden sm:inline cursor-help"
+              style={{ color: "var(--text-muted)" }}
+              tabIndex={0}
+              aria-label="Data sources"
+            >
+              Data Source <span style={{ color: "var(--accent-green)" }}>?</span>
+              <span
+                role="tooltip"
+                className="pointer-events-none absolute right-0 top-full mt-1 whitespace-nowrap rounded border px-2 py-1 text-[10px] opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100 z-50"
+                style={{
+                  background: "var(--panel-header)",
+                  borderColor: "var(--border)",
+                  color: "var(--foreground)",
+                }}
+              >
+                Data by DefiLlama + Dune + Allium
+              </span>
             </span>
             <span className="inline-flex items-center gap-1.5 text-[10px]" style={{ color: "var(--text-muted)" }}>
               <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "var(--accent-green)" }} />
@@ -46,7 +62,6 @@ export default function TerminalLayout({
         </div>
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline">Cache: 6h</span>
-          <span>Powered by DefiLlama + Dune + Allium</span>
         </div>
       </div>
     </div>

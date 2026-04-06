@@ -18,18 +18,6 @@ import type { TransferVolumeEntry, DuneApiResponse } from "@/lib/types";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import ChartWatermark from "./ChartWatermark";
 
-function SkeletonRow() {
-  return (
-    <tr>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <td key={i} className="py-2 px-3">
-          <div className="h-4 w-16 skeleton" />
-        </td>
-      ))}
-    </tr>
-  );
-}
-
 interface ChainRow {
   blockchain: string;
   total_volume: number;

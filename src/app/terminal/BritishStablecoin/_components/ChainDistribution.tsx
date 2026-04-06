@@ -3,8 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { formatNative, formatPercent, formatCompactUSD } from "@/lib/format";
-import { TOKEN_META } from "@/lib/constants";
+import { formatNative, formatPercent } from "@/lib/format";
 
 const RADIAN = Math.PI / 180;
 

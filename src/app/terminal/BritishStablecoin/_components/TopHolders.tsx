@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { formatNative, formatPercent, formatAddress, formatCompactUSD } from "@/lib/format";
+import { formatPercent, formatAddress, formatCompactUSD } from "@/lib/format";
 import { TOKEN_META, CHART_COLORS } from "@/lib/constants";
 import { TokenLogo } from "@/components/TokenLogo";
 import type { TopHolderEntry, DuneApiResponse } from "@/lib/types";

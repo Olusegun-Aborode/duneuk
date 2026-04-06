@@ -12,7 +12,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import { formatCompactUSD } from "@/lib/format";
-import { CHART_COLORS } from "@/lib/constants";
 import type { MarketShareEntry, MarketOverview, SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import { GBP_TOKENS, EUR_TOKENS } from "@/contexts/CurrencyFilterContext";
@@ -142,7 +141,7 @@ export default function MarketShareComparison() {
   });
 
   // Compute counter totals from market-share / overview data
-  const { grouped, gbpShare, tokensByGroup } = useMemo(() => {
+  const { grouped, tokensByGroup } = useMemo(() => {
     const duneRows: MarketShareEntry[] = [
       ...(showGbp && gbpData?.data ? gbpData.data : []),
       ...(showEur && eurData?.data ? eurData.data : []),
@@ -174,9 +173,6 @@ export default function MarketShareComparison() {
       }
     }
 
-    const total = totals.GBP + totals.USD + totals.EUR;
-    const share = total === 0 ? 0 : (totals.GBP / total) * 100;
-
     // Group token symbols for tooltip
     const groups: Record<string, string[]> = { GBP: [], USD: [], EUR: [] };
     for (const row of rows) {
@@ -186,7 +182,7 @@ export default function MarketShareComparison() {
       }
     }
 
-    return { grouped: totals, gbpShare: share, tokensByGroup: groups };
+    return { grouped: totals, tokensByGroup: groups };
   }, [gbpData, eurData, solanaData, gbpOverview, eurOverview, showGbp, showEur]);
 
   // Aggregate supply-history by currency group per day for the area chart

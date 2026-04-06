@@ -12,7 +12,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { CHART_COLORS } from "@/lib/constants";
-import { formatGBP, formatEUR, formatUSD, formatNative, formatCompactUSD } from "@/lib/format";
+import { formatNative, formatCompactUSD } from "@/lib/format";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import type { SupplyHistoryEntry, DuneApiResponse } from "@/lib/types";
 import ChartWatermark from "./ChartWatermark";

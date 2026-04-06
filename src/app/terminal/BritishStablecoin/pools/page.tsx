@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useCurrencyFilter, tokenMatchesFilter } from "@/contexts/CurrencyFilterContext";
 import { CurrencyFilterProvider } from "@/contexts/CurrencyFilterContext";
 import { CurrencyFilter } from "@/components/CurrencyFilter";
@@ -49,9 +50,9 @@ function PoolsContent() {
     <div className="space-y-4">
       <div className="flex items-end justify-between flex-wrap gap-2">
         <div>
-          <a href="/terminal/BritishStablecoin" className="inline-flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors mb-1">
+          <Link href="/terminal/BritishStablecoin" className="inline-flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors mb-1">
             <span>&larr;</span> Back to Terminal
-          </a>
+          </Link>
           <h1 className="text-lg font-bold text-[var(--foreground)] tracking-tight">Active LP Pools</h1>
           <p className="text-[var(--text-muted)] text-[11px] mt-0.5">{pools.length} pools · 30 day activity · min 5 trades</p>
         </div>

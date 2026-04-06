@@ -18,7 +18,6 @@ import Methodology from "./_components/Methodology";
 import NewsletterArchive from "./_components/NewsletterArchive";
 import ScreenshotButton from "./_components/ScreenshotButton";
 import { CurrencyFilterProvider } from "@/contexts/CurrencyFilterContext";
-import { CurrencyFilter } from "@/components/CurrencyFilter";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -44,11 +43,11 @@ const SECTIONS: Record<TabId, { id: string; label: string }[]> = {
 };
 
 function SectionNav({ sections }: { sections: { id: string; label: string }[] }) {
-  if (sections.length === 0) return null;
-
   const scrollTo = useCallback((id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
+
+  if (sections.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-1.5 mb-2">

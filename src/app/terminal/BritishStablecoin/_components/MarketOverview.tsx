@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { formatGBP, formatEUR, formatUSD, formatNumber, timeAgo } from "@/lib/format";
+import { formatGBP, formatEUR, formatUSD, timeAgo } from "@/lib/format";
 import { useChartFilter, ChartFilter } from "@/components/ChartFilter";
 import type {
   MarketOverview as MarketOverviewType,
@@ -103,11 +103,34 @@ export default function MarketOverview() {
     return total;
   };
 
+  // Canonicalize chain names so the same chain reported under different
+  // labels by Dune vs DefiLlama (e.g. "bnb" vs "bsc", "avalanche_c" vs
+  // "avalanche", "op mainnet" vs "optimism") collapses into one entry.
+  const CHAIN_ALIASES: Record<string, string> = {
+    bnb: "bsc",
+    binance: "bsc",
+    avalanche_c: "avalanche",
+    "op mainnet": "optimism",
+    "zksync lite": "zksync",
+    "zksync era": "zksync",
+  };
+  const canonChain = (c: string) => {
+    const k = c.toLowerCase().trim();
+    return CHAIN_ALIASES[k] ?? k;
+  };
+
   const totalTokensChains = () => {
-    let tokens = 0, chains = 0;
-    if (showGbp && gbpOverview) { tokens += gbpOverview.num_tokens; chains += gbpOverview.total_chain_deployments; }
-    if (showEur && eurOverview) { tokens += eurOverview.num_tokens; chains += eurOverview.total_chain_deployments; }
-    return tokens > 0 ? `${tokens} / ${chains}` : null;
+    let tokens = 0;
+    const chainSet = new Set<string>();
+    if (showGbp && gbpOverview) {
+      tokens += gbpOverview.num_tokens;
+      (gbpData?.chains ?? []).forEach((c) => chainSet.add(canonChain(c)));
+    }
+    if (showEur && eurOverview) {
+      tokens += eurOverview.num_tokens;
+      (eurData?.chains ?? []).forEach((c) => chainSet.add(canonChain(c)));
+    }
+    return tokens > 0 ? `${tokens} / ${chainSet.size}` : null;
   };
 
   // In ALL mode: show combined USD as primary, with GBP+EUR breakdown below

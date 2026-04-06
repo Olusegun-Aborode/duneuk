@@ -12,7 +12,6 @@ import {
   CartesianGrid,
 } from "recharts";
 import { formatCompactUSD, formatNumber, formatPercent } from "@/lib/format";
-import { TOKEN_META } from "@/lib/constants";
 import InsightPanel from "./InsightPanel";
 import ChartWatermark from "./ChartWatermark";
 import type { LendingUtilizationEntry, DuneApiResponse } from "@/lib/types";

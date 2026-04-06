@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
 export type CurrencyFilter = "GBP" | "EUR" | "ALL";
 
@@ -21,28 +21,29 @@ const CurrencyFilterContext = createContext<CurrencyFilterContextValue>({
 const STORAGE_KEY = "duneuk-currency-filter";
 const TOKEN_STORAGE_KEY = "duneuk-token-filter";
 
-export function CurrencyFilterProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrencyState] = useState<CurrencyFilter>("ALL");
-  const [selectedTokens, setSelectedTokensState] = useState<string[]>([]);
+function readInitialCurrency(): CurrencyFilter {
+  if (typeof window === "undefined") return "ALL";
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === "GBP" || stored === "EUR" || stored === "ALL") return stored;
+  return "ALL";
+}
 
-  // Hydrate from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "GBP" || stored === "EUR" || stored === "ALL") {
-      setCurrencyState(stored);
-    }
-    try {
-      const storedTokens = localStorage.getItem(TOKEN_STORAGE_KEY);
-      if (storedTokens) {
-        const parsed = JSON.parse(storedTokens);
-        if (Array.isArray(parsed)) {
-          setSelectedTokensState(parsed);
-        }
-      }
-    } catch {
-      // ignore invalid JSON
-    }
-  }, []);
+function readInitialTokens(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function CurrencyFilterProvider({ children }: { children: ReactNode }) {
+  // Lazy initializers so localStorage hydration happens during render, not in an effect.
+  const [currency, setCurrencyState] = useState<CurrencyFilter>(readInitialCurrency);
+  const [selectedTokens, setSelectedTokensState] = useState<string[]>(readInitialTokens);
 
   const setCurrency = useCallback((c: CurrencyFilter) => {
     setCurrencyState(c);
@@ -74,6 +75,10 @@ export function useCurrencyFilter() {
 
 /** Token lists by currency group */
 export const GBP_TOKENS = ["tGBP", "GBPm", "GBPe", "GBPT", "VGBP", "eGBP"] as const;
+// Curated EUR token coverage. Source of truth is Dune; DefiLlama and Allium
+// are supplements. Tokens listed here are the canonical set the dashboard
+// claims to track — wire each one up via Dune (preferred), with DefiLlama /
+// Allium added only when Dune doesn't cover the chain or to verify accuracy.
 export const EUR_TOKENS = ["EURC", "EURCV", "EURI", "AEUR", "EURe", "EURR", "EURS", "EUROP", "EURm", "EURA", "VEUR", "PAR", "EURAU", "EURT", "EUROe", "sEUR", "eEUR"] as const;
 export const ALL_TOKENS = [...GBP_TOKENS, ...EUR_TOKENS] as const;
 

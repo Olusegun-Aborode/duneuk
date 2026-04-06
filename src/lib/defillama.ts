@@ -56,7 +56,7 @@ async function cachedFetch<T>(url: string): Promise<T> {
 }
 
 interface DLStablecoin {
-  id: number;
+  id: string | number;
   name: string;
   symbol: string;
   gecko_id: string;
@@ -79,14 +79,24 @@ interface DLStablecoinDetail {
 }
 
 /**
- * Get all EUR stablecoins with current supply
+ * Get all EUR stablecoins with current supply.
+ * Filtered to the curated EUR_STABLECOIN_IDS whitelist so the on-screen
+ * "tokens tracked" count matches the documented coverage and never inflates
+ * with new low-volume pegged assets DefiLlama starts indexing.
  */
 export async function getEurStablecoins(): Promise<DLStablecoin[]> {
   const data = await cachedFetch<DLStablecoinsResponse>(
     `${DEFILLAMA_BASE}/stablecoins?includePrices=true`
   );
+  // DefiLlama returns `id` as a string, our whitelist stores numbers — compare as strings.
+  const whitelist = new Set(
+    Object.values(EUR_STABLECOIN_IDS).map((m) => String(m.id))
+  );
   return data.peggedAssets.filter(
-    (s) => s.pegType === "peggedEUR" && (s.circulating?.peggedEUR ?? 0) > 1000
+    (s) =>
+      s.pegType === "peggedEUR" &&
+      (s.circulating?.peggedEUR ?? 0) > 1000 &&
+      whitelist.has(String(s.id))
   );
 }
 
@@ -116,6 +126,7 @@ export async function getEurMarketOverview() {
       num_tokens: stables.length,
       total_chain_deployments: uniqueChains.size,
     }],
+    chains: Array.from(uniqueChains),
     lastUpdated: new Date().toISOString(),
     source: "defillama",
   };
