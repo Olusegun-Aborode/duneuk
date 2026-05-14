@@ -206,26 +206,34 @@ export default function LendingUtilization() {
         </div>
       </div>
       <div className="px-2 pt-2 pb-1">
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={chartData} margin={{ top: 8, right: 12, left: 4, bottom: 8 }} barGap={4} barCategoryGap="30%">
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+        <ResponsiveContainer width="100%" height={Math.max(240, chartData.length * 40 + 40)}>
+          <BarChart
+            data={chartData}
+            layout="vertical"
+            margin={{ top: 8, right: 16, left: 4, bottom: 8 }}
+            barGap={2}
+            barCategoryGap="25%"
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
             <XAxis
-              dataKey="label"
-              tick={{ fontSize: 10, fill: "#6B7280" }}
-              tickLine={false}
-              axisLine={false}
-              interval={0}
-            />
-            <YAxis
+              type="number"
               tick={{ fontSize: 10, fill: "#6B7280" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) => formatCompactUSD(v)}
-              width={58}
+            />
+            <YAxis
+              type="category"
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "#6B7280" }}
+              tickLine={false}
+              axisLine={false}
+              width={140}
+              interval={0}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-            <Bar dataKey="supply_flow" name="Supply Flow" fill="#00FF88" radius={[3, 3, 0, 0]} barSize={20} />
-            <Bar dataKey="borrow_flow" name="Borrow Flow" fill="#FF6B35" radius={[3, 3, 0, 0]} barSize={20} />
+            <Bar dataKey="supply_flow" name="Supply Flow" fill="#00FF88" radius={[0, 3, 3, 0]} barSize={11} />
+            <Bar dataKey="borrow_flow" name="Borrow Flow" fill="#FF6B35" radius={[0, 3, 3, 0]} barSize={11} />
           </BarChart>
         </ResponsiveContainer>
         {/* Legend + metric explanation */}
