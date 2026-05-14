@@ -123,7 +123,9 @@ export default function MarketShareComparison() {
   });
 
   const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
-  const error = (showGbp && gbpError) || (showEur && eurError);
+  // Only ERR when every active currency has an explicit error.
+  // During loading (no data, no error yet) error stays false so the panel shows its skeleton.
+  const error = (!showGbp || !!gbpError) && (!showEur || !!eurError);
 
   // Fetch Solana GBP token data from Allium
   const { data: solanaData } = useQuery<{

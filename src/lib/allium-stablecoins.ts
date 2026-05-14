@@ -12,24 +12,39 @@ function getApiKey(): string {
   return key;
 }
 
-// Create and run a query in one call
-async function runAlliumQuery<T>(sql: string, limit: number = 100): Promise<T[]> {
-  const apiKey = getApiKey();
+// Persist query_id per logical SQL key so we don't spam Allium with create-per-request
+// (which triggered 429s and bloated the workspace with eur_auto_* queries).
+// Optionally seeded via ALLIUM_QUERY_ID_<KEY> env vars for cross-instance reuse on Vercel.
+const queryIdByKey: Record<string, string> = {};
+function loadSeededId(key: string): string | undefined {
+  const envName = `ALLIUM_QUERY_ID_${key.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
+  return process.env[envName];
+}
 
-  // Step 1: Create the query
+async function getOrCreateQueryId(key: string, sql: string, limit: number): Promise<string> {
+  const cached = queryIdByKey[key] ?? loadSeededId(key);
+  if (cached) return cached;
+
+  const apiKey = getApiKey();
   const createRes = await fetch(ALLIUM_BASE, {
     method: "POST",
     headers: { "X-API-KEY": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      title: `eur_auto_${Date.now()}`,
+      title: `duneuk_${key}`,
       config: { sql, limit },
     }),
   });
-  if (!createRes.ok) throw new Error(`Allium create failed: ${createRes.status}`);
+  if (!createRes.ok) {
+    throw new Error(`Allium create failed: ${createRes.status}`);
+  }
   const { query_id } = await createRes.json();
+  queryIdByKey[key] = query_id;
+  return query_id;
+}
 
-  // Step 2: Run and get results
-  const runRes = await fetch(`${ALLIUM_BASE}/${query_id}/run`, {
+async function runQuery<T>(queryId: string): Promise<T[]> {
+  const apiKey = getApiKey();
+  const runRes = await fetch(`${ALLIUM_BASE}/${queryId}/run`, {
     method: "POST",
     headers: { "X-API-KEY": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({}),
@@ -39,18 +54,35 @@ async function runAlliumQuery<T>(sql: string, limit: number = 100): Promise<T[]>
   return (result.data ?? []) as T[];
 }
 
-// Cache layer
+async function runAlliumQuery<T>(key: string, sql: string, limit: number = 100): Promise<T[]> {
+  const queryId = await getOrCreateQueryId(key, sql, limit);
+  return runQuery<T>(queryId);
+}
+
+// Result cache + negative cache for rate limits (avoids hammering Allium when 429)
 const cache: Record<string, { data: unknown; ts: number }> = {};
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const errorCache: Record<string, { ts: number; msg: string }> = {};
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours (match Dune)
+const ERROR_BACKOFF_MS = 15 * 60 * 1000; // 15 min backoff after a failure
 
 async function cachedQuery<T>(key: string, sql: string, limit?: number): Promise<T[]> {
   const now = Date.now();
   if (cache[key] && now - cache[key].ts < CACHE_TTL) {
     return cache[key].data as T[];
   }
-  const rows = await runAlliumQuery<T>(sql, limit);
-  cache[key] = { data: rows, ts: now };
-  return rows;
+  const lastError = errorCache[key];
+  if (lastError && now - lastError.ts < ERROR_BACKOFF_MS) {
+    throw new Error(`Allium ${key} backoff: ${lastError.msg}`);
+  }
+  try {
+    const rows = await runAlliumQuery<T>(key, sql, limit ?? 100);
+    cache[key] = { data: rows, ts: now };
+    delete errorCache[key];
+    return rows;
+  } catch (err) {
+    errorCache[key] = { ts: now, msg: (err as Error).message };
+    throw err;
+  }
 }
 
 // Known EUR tokens to filter against (avoids unknown/spam tokens)
@@ -137,76 +169,4 @@ export async function getEurDailyActiveUsers() {
   };
 }
 
-/**
- * EUR Top Holders — largest balances from transfer events (Ethereum only for perf)
- */
-export async function getEurTopHolders() {
-  const sql = `
-    WITH eur_tokens AS (
-      SELECT address, symbol, chain, decimals
-      FROM crosschain.stablecoin.list
-      WHERE currency = 'eur' AND chain = 'ethereum'
-    ),
-    transfers AS (
-      SELECT
-        t.recipient AS address,
-        et.symbol AS token,
-        SUM(t.transfer_volume) AS received
-      FROM crosschain.stablecoin.transfers t
-      INNER JOIN eur_tokens et ON t.token_address = et.address AND t.chain = et.chain
-      WHERE t.currency = 'eur' AND t.chain = 'ethereum'
-      GROUP BY t.recipient, et.symbol
-
-      UNION ALL
-
-      SELECT
-        t.sender AS address,
-        et.symbol AS token,
-        -SUM(t.transfer_volume) AS received
-      FROM crosschain.stablecoin.transfers t
-      INNER JOIN eur_tokens et ON t.token_address = et.address AND t.chain = et.chain
-      WHERE t.currency = 'eur' AND t.chain = 'ethereum'
-      GROUP BY t.sender, et.symbol
-    ),
-    balances AS (
-      SELECT token, address, SUM(received) AS balance_eur
-      FROM transfers
-      WHERE address != '0x0000000000000000000000000000000000000000'
-      GROUP BY token, address
-      HAVING SUM(received) > 1
-    )
-    SELECT
-      'ethereum' AS blockchain,
-      token,
-      address,
-      balance_eur,
-      balance_eur * 1.15 AS balance_usd,
-      (balance_eur / NULLIF(SUM(balance_eur) OVER (PARTITION BY token), 0)) * 100 AS pct_of_supply
-    FROM balances
-    ORDER BY balance_eur DESC
-    LIMIT 50
-  `;
-
-  try {
-    const rows = await cachedQuery<{
-      blockchain: string; token: string; address: string;
-      balance_eur: number; balance_usd: number; pct_of_supply: number;
-    }>("eur-top-holders", sql, 50);
-
-    return {
-      data: rows.map((r) => ({
-        blockchain: r.blockchain ?? "ethereum",
-        token: (r.token ?? "").toUpperCase(),
-        address: r.address ?? "",
-        balance_gbp: Math.round((r.balance_eur ?? 0) * 100) / 100, // normalized
-        balance_usd: Math.round((r.balance_usd ?? 0) * 100) / 100,
-        pct_of_supply: Math.round((r.pct_of_supply ?? 0) * 100) / 100,
-      })),
-      lastUpdated: new Date().toISOString(),
-      source: "allium",
-    };
-  } catch {
-    // Fallback: top holders query is expensive, return empty
-    return { data: [], lastUpdated: new Date().toISOString(), source: "allium" as const };
-  }
-}
+// (Allium top-holders SQL removed — EUR top holders now served by Sim, see lib/sim.ts.)

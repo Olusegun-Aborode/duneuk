@@ -9,9 +9,12 @@ export async function GET() {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Failed to fetch euro daily active users:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch euro daily active users" },
-      { status: 500 }
-    );
+    // Degrade gracefully so GBP data still renders in the panel
+    return NextResponse.json({
+      data: [],
+      lastUpdated: new Date().toISOString(),
+      source: "allium-degraded",
+      error: (error as Error).message,
+    });
   }
 }

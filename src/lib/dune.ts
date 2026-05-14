@@ -12,12 +12,25 @@ const dune = new DuneConnector({
   cacheTtlMs: 6 * 60 * 60 * 1000, // 6 hours
 });
 
-export async function getDuneQueryResults(queryId: number) {
-  const result = await dune.getQueryResults(queryId, 10000);
+interface GetOptions {
+  /** If Dune-side data is older than this, trigger a fresh execution (blocks). */
+  maxAgeMs?: number;
+  /** Force a fresh execution. Used by the admin refresh route. */
+  forceExecute?: boolean;
+}
+
+export async function getDuneQueryResults(queryId: number, options?: GetOptions) {
+  const result = await dune.getQueryResults(queryId, 10000, options);
   return {
     data: result.data,
     lastUpdated: result.lastUpdated,
+    stale: result.stale,
   };
+}
+
+/** Trigger a fresh execution on Dune and wait for completion. */
+export async function executeDuneQuery(queryId: number) {
+  return dune.executeQuery(queryId);
 }
 
 /** Clear cached results for a single query. Forces the next call to refetch. */

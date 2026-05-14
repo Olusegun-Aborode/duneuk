@@ -9,6 +9,7 @@ interface DuneResult {
   data: Record<string, unknown>[];
   lastUpdated: string;
   source: 'dune';
+  stale?: boolean;
 }
 
 interface ExecuteOptions {
@@ -18,7 +19,10 @@ interface ExecuteOptions {
 }
 
 interface GetQueryOptions {
+  /** If Dune-side data is older than this, trigger a fresh execution and block until done. */
   maxAgeMs?: number;
+  /** Always trigger a fresh execution regardless of cached/Dune freshness. */
+  forceExecute?: boolean;
   executeOptions?: ExecuteOptions;
 }
 
@@ -47,10 +51,16 @@ export class DuneConnector {
 
   /**
    * Fetch ALL rows from a Dune endpoint by paginating automatically.
+   * Also returns Dune's execution_ended_at so callers know how fresh the
+   * underlying data on Dune is (independent of our local cache age).
    */
-  private async fetchAllRows(url: string): Promise<Record<string, unknown>[]> {
+  private async fetchAllRows(url: string): Promise<{
+    rows: Record<string, unknown>[];
+    executionEndedAt: string | null;
+  }> {
     const allRows: Record<string, unknown>[] = [];
     let offset = 0;
+    let executionEndedAt: string | null = null;
 
     while (true) {
       const separator = url.includes('?') ? '&' : '?';
@@ -66,6 +76,9 @@ export class DuneConnector {
 
       const json = await res.json();
       const rows: Record<string, unknown>[] = json.result?.rows ?? [];
+      if (executionEndedAt === null) {
+        executionEndedAt = json.execution_ended_at ?? json.result?.metadata?.execution_ended_at ?? null;
+      }
 
       allRows.push(...rows);
 
@@ -73,13 +86,18 @@ export class DuneConnector {
       offset += this.pageSize;
     }
 
-    return allRows;
+    return { rows: allRows, executionEndedAt };
   }
 
   /**
    * Fetch results for a Dune query by ID.
    * Auto-paginates to retrieve ALL rows.
-   * When maxAgeMs is set, triggers a fresh execution if data is stale.
+   *
+   * The reported `lastUpdated` is Dune's `execution_ended_at` (when the
+   * underlying query last ran on Dune), NOT when we cached it locally.
+   *
+   * - `forceExecute: true` always triggers a fresh execution.
+   * - `maxAgeMs` triggers a fresh execution if Dune-side data is stale.
    */
   async getQueryResults(
     queryId: number,
@@ -88,41 +106,49 @@ export class DuneConnector {
   ): Promise<DuneResult> {
     if (!this.apiKey) throw new Error('DUNE_API_KEY not configured');
 
+    if (options?.forceExecute) {
+      return this.executeQuery(queryId, options.executeOptions);
+    }
+
     const cacheKey = `dune:${queryId}`;
+    const metaKey = `dune:${queryId}:meta`;
     const cached = this.cache.get<Record<string, unknown>[]>(cacheKey);
+    const cachedMeta = this.cache.get<{ executionEndedAt: string | null }>(metaKey);
+
+    const isStaleOnDune = (executionEndedAt: string | null): boolean => {
+      if (!options?.maxAgeMs || !executionEndedAt) return false;
+      const age = Date.now() - new Date(executionEndedAt).getTime();
+      return age > options.maxAgeMs;
+    };
 
     if (cached) {
-      if (options?.maxAgeMs) {
-        const lastUpdatedStr = this.cache.lastUpdated(cacheKey);
-        if (lastUpdatedStr) {
-          const age = Date.now() - new Date(lastUpdatedStr).getTime();
-          if (age > options.maxAgeMs) {
-            return this.executeQuery(queryId, options.executeOptions);
-          }
-        }
+      const executionEndedAt = cachedMeta?.executionEndedAt ?? null;
+      if (isStaleOnDune(executionEndedAt)) {
+        return this.executeQuery(queryId, options?.executeOptions);
       }
-
       return {
         data: cached,
-        lastUpdated: this.cache.lastUpdated(cacheKey)!,
+        lastUpdated: executionEndedAt ?? this.cache.lastUpdated(cacheKey)!,
         source: 'dune',
       };
     }
 
-    if (options?.maxAgeMs) {
-      return this.executeQuery(queryId, options.executeOptions);
-    }
-
-    const rows = await this.fetchAllRows(
+    const { rows, executionEndedAt } = await this.fetchAllRows(
       `${DUNE_API_BASE}/query/${queryId}/results`
     );
 
+    if (isStaleOnDune(executionEndedAt)) {
+      return this.executeQuery(queryId, options?.executeOptions);
+    }
+
     this.cache.set(cacheKey, rows);
+    this.cache.set(metaKey, { executionEndedAt });
 
     return {
       data: rows,
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: executionEndedAt ?? new Date().toISOString(),
       source: 'dune',
+      stale: !!(executionEndedAt && Date.now() - new Date(executionEndedAt).getTime() > 36 * 60 * 60 * 1000),
     };
   }
 
@@ -139,17 +165,25 @@ export class DuneConnector {
     const timeout = options.timeoutMs ?? 300_000;
     const params = options.params;
 
-    const execRes = await fetch(
-      `${DUNE_API_BASE}/query/${queryId}/execute`,
-      {
+    // Retry the /execute call on 429 — Dune's free/basic tier caps concurrent
+    // executions at 1, and many queries fired in a row would otherwise fail outright.
+    let execRes!: Response;
+    let attempt = 0;
+    const maxAttempts = 8;
+    while (attempt < maxAttempts) {
+      execRes = await fetch(`${DUNE_API_BASE}/query/${queryId}/execute`, {
         method: 'POST',
         headers: {
           'X-Dune-Api-Key': this.apiKey,
           'Content-Type': 'application/json',
         },
         body: params ? JSON.stringify({ query_parameters: params }) : undefined,
-      }
-    );
+      });
+      if (execRes.status !== 429) break;
+      const backoff = Math.min(30000, 2000 * Math.pow(2, attempt));
+      await new Promise((r) => setTimeout(r, backoff));
+      attempt++;
+    }
 
     if (!execRes.ok) {
       throw new Error(`Dune execute error: ${execRes.status} ${execRes.statusText}`);
@@ -192,16 +226,18 @@ export class DuneConnector {
       );
     }
 
-    const rows = await this.fetchAllRows(
+    const { rows, executionEndedAt } = await this.fetchAllRows(
       `${DUNE_API_BASE}/execution/${execution_id}/results`
     );
 
     const cacheKey = `dune:${queryId}`;
+    const metaKey = `dune:${queryId}:meta`;
     this.cache.set(cacheKey, rows);
+    this.cache.set(metaKey, { executionEndedAt });
 
     return {
       data: rows,
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: executionEndedAt ?? new Date().toISOString(),
       source: 'dune',
     };
   }

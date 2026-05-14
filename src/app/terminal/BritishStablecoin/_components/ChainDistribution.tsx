@@ -102,7 +102,9 @@ export default function ChainDistribution() {
   });
 
   const isLoading = (showGbp && gbpLoading) || (showEur && eurLoading);
-  const error = (showGbp && gbpError) || (showEur && eurError);
+  // Only ERR when every active currency has an explicit error.
+  // During loading (no data, no error yet) error stays false so the panel shows its skeleton.
+  const error = (!showGbp || !!gbpError) && (!showEur || !!eurError);
 
   const merged = useMemo(() => {
     const all: ChainDistributionEntry[] = [

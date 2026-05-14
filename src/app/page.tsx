@@ -45,10 +45,10 @@ export default function Home() {
                 <span className="text-[#FF6B35] text-xs">&gt;</span>
                 <div>
                   <span className="text-sm font-bold text-white group-hover:text-[#FF6B35] transition-colors">
-                    British Stablecoin Terminal
+                    Stablecoin Terminal
                   </span>
                   <p className="text-[10px] text-[#6B7280] mt-0.5">
-                    GBP stablecoin supply, volume, holders across all chains
+                    GBP &amp; EUR stablecoin supply, volume, holders across all chains
                   </p>
                 </div>
               </div>

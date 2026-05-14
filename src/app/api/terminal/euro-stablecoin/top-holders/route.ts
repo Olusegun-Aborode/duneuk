@@ -1,36 +1,24 @@
 import { NextResponse } from "next/server";
-import { getDuneQueryResults } from "@/lib/dune";
-import { EURO_QUERY_IDS } from "@/lib/constants";
+import { getEurTopHoldersFromSim } from "@/lib/sim";
+import { EUR_TOKEN_CONTRACTS, EUR_USD_RATE } from "@/lib/token-registry";
 
 export const dynamic = "force-dynamic";
 
-function normalizeEurFields(rows: Record<string, unknown>[]): Record<string, unknown>[] {
-  const mapping: Record<string, string> = {
-    total_supply_eur: "total_supply_gbp",
-    supply_eur: "supply_gbp",
-    volume_eur: "volume_gbp",
-    balance_eur: "balance_gbp",
-    eur_token: "gbp_token",
-  };
-  return rows.map(row => {
-    const out: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(row)) {
-      out[mapping[key] ?? key] = val;
-    }
-    return out;
-  });
-}
-
 export async function GET() {
   try {
-    const result = await getDuneQueryResults(EURO_QUERY_IDS.TOP_HOLDERS);
-    const data = { ...result, data: normalizeEurFields(result.data) };
-    return NextResponse.json(data);
+    const rows = await getEurTopHoldersFromSim(EUR_TOKEN_CONTRACTS, 50, EUR_USD_RATE);
+    return NextResponse.json({
+      data: rows,
+      lastUpdated: new Date().toISOString(),
+      source: "sim",
+    });
   } catch (error) {
-    console.error("Failed to fetch euro top holders:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch euro top holders" },
-      { status: 500 }
-    );
+    console.error("Failed to fetch euro top holders via Sim:", error);
+    return NextResponse.json({
+      data: [],
+      lastUpdated: new Date().toISOString(),
+      source: "sim-degraded",
+      error: (error as Error).message,
+    });
   }
 }

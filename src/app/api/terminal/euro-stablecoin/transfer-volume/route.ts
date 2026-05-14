@@ -9,9 +9,11 @@ export async function GET() {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Failed to fetch euro transfer volume:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch euro transfer volume" },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      data: [],
+      lastUpdated: new Date().toISOString(),
+      source: "allium-degraded",
+      error: (error as Error).message,
+    });
   }
 }

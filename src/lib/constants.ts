@@ -6,14 +6,25 @@ export const QUERY_IDS = {
   DAILY_ACTIVE_USERS: 6842791,
   CHAIN_DISTRIBUTION: 6842792,
   TOP_HOLDERS: 6842793,
-  DEX_VOLUME: 6843561,
-  DEX_PLATFORMS: 6843563,
-  MARKET_SHARE: 6843568,
-  LENDING: 6843569,
-  DEX_POOLS: 6843570,
+  // Re-pointed to current saved queries (the originals 6843561/63/68/69/70 were archived on Dune).
+  DEX_VOLUME: 6276579,    // GBP DEX volume by week × chain × symbol × project
+  DEX_PLATFORMS: 6276579, // same source, aggregated by project in the component
+  MARKET_SHARE: 6843568,  // unchanged — supply-share comparison, archived but data is static enough
+  LENDING: 6276573,       // unified lending utilisation (Ethereum, EUR+USD comparison; GBP absent on-chain)
+  DEX_POOLS: 6843570,     // no replacement provided yet
 } as const;
 
-// EUR query IDs — placeholder until Dune queries are created via MCP
+// Unified (cross-currency) queries — single source of truth for panels that span GBP + EUR.
+export const UNIFIED_QUERY_IDS = {
+  SUPPLY_BY_CHAIN: 6276583,    // GBP supply by week × symbol × chain
+  WEEKLY_ACTIVE_USERS: 6311841,// weekly DAU across GBP + EUR
+  MARKET_SHARE_DAILY: 6276559, // daily volume-based market share across EUR/GBP/USD
+  DEX_VOLUME_CROSS: 6276569,   // cross-currency DEX volume with chain
+  DEX_PLATFORMS_CROSS: 6276570,// cross-currency DEX platforms (no chain)
+  LENDING_CROSS: 6276573,      // cross-currency lending utilisation (Ethereum)
+} as const;
+
+// EUR query IDs — Dune-primary for supply/holders/etc.; Allium covers transfers + DAU
 export const EURO_QUERY_IDS = {
   MARKET_OVERVIEW: 6912622,
   SUPPLY_LEADERBOARD: 6912723,
