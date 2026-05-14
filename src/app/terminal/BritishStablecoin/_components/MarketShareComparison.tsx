@@ -199,23 +199,29 @@ export default function MarketShareComparison() {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
-    // Aggregate by day and currency group
-    const byDay: Record<string, { GBP: number; EUR: number }> = {};
+    // Aggregate per-currency separately. Leaving a currency `undefined` on days
+    // where it has no data avoids a "drop to zero" cliff at the right edge when
+    // one currency's data lags (e.g. EUR ends 2 days behind GBP).
+    const gbpByDay: Record<string, number> = {};
+    const eurByDay: Record<string, number> = {};
     for (const row of historyRows) {
       const d = new Date(row.day);
       if (d > today) continue;
       if (cutoff && d < cutoff) continue;
 
       const group = getCurrencyGroup(row.token);
-      if (!group) continue;
-
-      if (!byDay[row.day]) byDay[row.day] = { GBP: 0, EUR: 0 };
-      byDay[row.day][group] += row.supply_usd;
+      if (group === "GBP") gbpByDay[row.day] = (gbpByDay[row.day] ?? 0) + row.supply_usd;
+      else if (group === "EUR") eurByDay[row.day] = (eurByDay[row.day] ?? 0) + row.supply_usd;
     }
 
-    return Object.entries(byDay)
-      .map(([day, values]) => ({ day, ...values }))
-      .sort((a, b) => a.day.localeCompare(b.day));
+    const allDays = new Set([...Object.keys(gbpByDay), ...Object.keys(eurByDay)]);
+    return [...allDays]
+      .sort()
+      .map((day) => ({
+        day,
+        GBP: gbpByDay[day], // undefined → Recharts gap, no cliff
+        EUR: eurByDay[day],
+      }));
   }, [gbpHistory, eurHistory, range, showGbp, showEur]);
 
   const [showTooltip, setShowTooltip] = useState(false);
@@ -368,6 +374,7 @@ export default function MarketShareComparison() {
                       fill={GROUP_COLORS.EUR}
                       fillOpacity={0.15}
                       strokeWidth={1.5}
+                      connectNulls
                     />
                   )}
                   {showGbp && (
@@ -378,6 +385,7 @@ export default function MarketShareComparison() {
                       fill={GROUP_COLORS.GBP}
                       fillOpacity={0.15}
                       strokeWidth={1.5}
+                      connectNulls
                     />
                   )}
                 </AreaChart>
